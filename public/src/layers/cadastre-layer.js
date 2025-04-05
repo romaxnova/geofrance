@@ -34,7 +34,8 @@ export function initCadastreLayer() {
   logger.info('Initializing API Carto cadastre layer');
   const map = getMap();
 
-  const checkbox = document.querySelector('#toggle-cadastre');
+  const checkbox = document.querySelector('#cadastre-layer-toggle');
+  
   if (!checkbox) {
     logger.error('Missing cadastre toggle checkbox');
     return;
