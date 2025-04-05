@@ -12,30 +12,40 @@ let isActive = false;
 
 const API_CARTO_BASE = API_URLS.carto.cadastre; // ✅ centralized URL
 
-// Sample INSEE code - replace with dynamic detection later
-const DEFAULT_INSEE = '75056'; // Paris
-
 /**
- * Build the query URL for API Carto
- * @param {string} insee - INSEE code of the commune
+ * Build a GeoJSON Point geometry string for a given coordinate
+ * @param {Array} lngLat - [lng, lat] array
  */
-function buildApiUrl(insee = DEFAULT_INSEE) {
-  const url = new URL(API_CARTO_BASE);
-  url.searchParams.append('code_insee', insee);
-  url.searchParams.append('source_ign', 'PCI');
-  url.searchParams.append('_limit', '1000');
-  return url.toString();
+function buildPointGeom(lngLat) {
+  return {
+    type: 'Point',
+    coordinates: lngLat
+  };
 }
 
 /**
- * Initialize the cadastre layer (fetch + GeoJSON render)
+ * Query API Carto for parcels around a point
+ * @param {Array} lngLat - [lng, lat]
+ */
+async function fetchParcelsByPoint(lngLat) {
+  const geom = buildPointGeom(lngLat);
+  const url = `${API_URLS.carto.cadastre}?source_ign=PCI&geom=${encodeURIComponent(JSON.stringify(geom))}`;
+  logger.info(`Fetching cadastre around point ${lngLat.join(', ')}`);
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  const geojson = await res.json();
+  return geojson;
+}
+
+/**
+ * Initialize the cadastre layer using current map center or address later
  */
 export function initCadastreLayer() {
   logger.info('Initializing API Carto cadastre layer');
   const map = getMap();
-
   const checkbox = document.querySelector('#cadastre-layer-toggle');
-  
+
   if (!checkbox) {
     logger.error('Missing cadastre toggle checkbox');
     return;
@@ -44,11 +54,10 @@ export function initCadastreLayer() {
   checkbox.addEventListener('change', async (event) => {
     isActive = event.target.checked;
     if (isActive) {
-      logger.info('Loading cadastre from API Carto...');
-      const apiUrl = buildApiUrl();
       try {
-        const res = await fetch(apiUrl);
-        const geojson = await res.json();
+        const center = map.getCenter();
+        const lngLat = [center.lng, center.lat];
+        const geojson = await fetchParcelsByPoint(lngLat);
 
         cadastreLayer = L.geoJSON(geojson, {
           style: {
@@ -61,6 +70,7 @@ export function initCadastreLayer() {
             layer.bindPopup(`Parcelle: ${props.section || ''}-${props.numero || ''}`);
           }
         }).addTo(map);
+
         logger.info(`Cadastre loaded (${geojson.features.length} features)`);
       } catch (err) {
         logger.error('Error loading cadastre:', err);
@@ -74,3 +84,4 @@ export function initCadastreLayer() {
     }
   });
 }
+
