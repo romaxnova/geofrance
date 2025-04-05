@@ -115,6 +115,9 @@ export function testMap() {
     }
 }
 
+window._map = map; // ✅ exposes the map globally
+
+
 export default {
     initMap,
     getMap,
