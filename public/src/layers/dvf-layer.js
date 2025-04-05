@@ -1,6 +1,6 @@
 /**
  * DVF (Demandes de Valeurs Foncières) layer functionality — using API backend
- * Dynamically loads data for current map bounds and integrates popup info
+ * Dynamically loads data for current map bounds and integrates popup info with zoom-sensitive sampling
  */
 
 import { getMap } from './leaflet-base.js';
@@ -43,6 +43,8 @@ export function initDVFLayer() {
 async function updateDVFLayer() {
   const map = getMap();
   const bounds = map.getBounds();
+  const zoom = map.getZoom();
+
   const bbox = [
     bounds.getSouthWest().lng.toFixed(5),
     bounds.getSouthWest().lat.toFixed(5),
@@ -50,10 +52,16 @@ async function updateDVFLayer() {
     bounds.getNorthEast().lat.toFixed(5)
   ].join(',');
 
+  // Adjust sampling limit by zoom level (fewer points at low zoom)
+  let sampleLimit = 1000;
+  if (zoom < 8) sampleLimit = 100;
+  else if (zoom < 11) sampleLimit = 300;
+  else if (zoom < 13) sampleLimit = 600;
+
   logger.info('Fetching DVF data for bounds:', bbox);
 
   try {
-    const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf?bbox=${bbox}`);
+    const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf?bbox=${bbox}&limit=${sampleLimit}`);
     const data = await res.json();
 
     if (!data || data.length === 0) {
