@@ -1,0 +1,8 @@
+requirements.txt
+# Ce fichier est vide car l'application est entièrement basée sur des technologies frontend
+# et ne nécessite pas de dépendances Python.
+#
+# L'application utilise les bibliothèques suivantes chargées via CDN :
+# - Leaflet.js pour la cartographie
+#
+# Aucune installation de package n'est requise pour le fonctionnement de l'application.

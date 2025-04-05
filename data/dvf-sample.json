@@ -1,0 +1,405 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 1,
+        "date_mutation": "2023-05-15",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 320000,
+        "adresse_numero": "12",
+        "adresse_nom_voie": "Rue de Paris",
+        "code_postal": "75001",
+        "nom_commune": "Paris",
+        "surface_reelle_bati": 65,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [2.3488, 48.8534]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 2,
+        "date_mutation": "2023-06-22",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 450000,
+        "adresse_numero": "8",
+        "adresse_nom_voie": "Avenue des Champs-Élysées",
+        "code_postal": "75008",
+        "nom_commune": "Paris",
+        "surface_reelle_bati": 85,
+        "nombre_pieces_principales": 4,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [2.3084, 48.8698]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 3,
+        "date_mutation": "2022-11-05",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 280000,
+        "adresse_numero": "24",
+        "adresse_nom_voie": "Rue de la République",
+        "code_postal": "69002",
+        "nom_commune": "Lyon",
+        "surface_reelle_bati": 60,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.8357, 45.7640]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 4,
+        "date_mutation": "2022-09-18",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 195000,
+        "adresse_numero": "5",
+        "adresse_nom_voie": "Rue Paradis",
+        "code_postal": "13001",
+        "nom_commune": "Marseille",
+        "surface_reelle_bati": 45,
+        "nombre_pieces_principales": 2,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [5.3810, 43.2969]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 5,
+        "date_mutation": "2023-02-10",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 520000,
+        "adresse_numero": "15",
+        "adresse_nom_voie": "Rue du Château",
+        "code_postal": "33000",
+        "nom_commune": "Bordeaux",
+        "surface_reelle_bati": 110,
+        "nombre_pieces_principales": 5,
+        "type_local": "Maison"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-0.5800, 44.8378]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 6,
+        "date_mutation": "2021-07-30",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 180000,
+        "adresse_numero": "42",
+        "adresse_nom_voie": "Rue des Lilas",
+        "code_postal": "31000",
+        "nom_commune": "Toulouse",
+        "surface_reelle_bati": 50,
+        "nombre_pieces_principales": 2,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [1.4442, 43.6045]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 7,
+        "date_mutation": "2021-11-15",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 420000,
+        "adresse_numero": "3",
+        "adresse_nom_voie": "Place de la Bourse",
+        "code_postal": "33000",
+        "nom_commune": "Bordeaux",
+        "surface_reelle_bati": 95,
+        "nombre_pieces_principales": 4,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-0.5695, 44.8413]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 8,
+        "date_mutation": "2022-03-25",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 350000,
+        "adresse_numero": "18",
+        "adresse_nom_voie": "Rue Nationale",
+        "code_postal": "59000",
+        "nom_commune": "Lille",
+        "surface_reelle_bati": 78,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [3.0635, 50.6365]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 9,
+        "date_mutation": "2023-01-08",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 620000,
+        "adresse_numero": "7",
+        "adresse_nom_voie": "Boulevard Victor Hugo",
+        "code_postal": "06000",
+        "nom_commune": "Nice",
+        "surface_reelle_bati": 120,
+        "nombre_pieces_principales": 5,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [7.2620, 43.7102]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 10,
+        "date_mutation": "2022-08-12",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 245000,
+        "adresse_numero": "29",
+        "adresse_nom_voie": "Rue Saint-Pierre",
+        "code_postal": "44000",
+        "nom_commune": "Nantes",
+        "surface_reelle_bati": 65,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-1.5536, 47.2172]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 11,
+        "date_mutation": "2020-10-05",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 175000,
+        "adresse_numero": "14",
+        "adresse_nom_voie": "Rue des Carmes",
+        "code_postal": "45000",
+        "nom_commune": "Orléans",
+        "surface_reelle_bati": 55,
+        "nombre_pieces_principales": 2,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [1.9039, 47.9029]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 12,
+        "date_mutation": "2020-06-18",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 380000,
+        "adresse_numero": "22",
+        "adresse_nom_voie": "Rue Gambetta",
+        "code_postal": "33000",
+        "nom_commune": "Bordeaux",
+        "surface_reelle_bati": 85,
+        "nombre_pieces_principales": 4,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-0.5750, 44.8350]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 13,
+        "date_mutation": "2021-04-22",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 290000,
+        "adresse_numero": "8",
+        "adresse_nom_voie": "Rue Émile Zola",
+        "code_postal": "69100",
+        "nom_commune": "Villeurbanne",
+        "surface_reelle_bati": 72,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.8830, 45.7680]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 14,
+        "date_mutation": "2023-03-14",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 750000,
+        "adresse_numero": "5",
+        "adresse_nom_voie": "Avenue Foch",
+        "code_postal": "75016",
+        "nom_commune": "Paris",
+        "surface_reelle_bati": 140,
+        "nombre_pieces_principales": 6,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [2.2775, 48.8704]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 15,
+        "date_mutation": "2022-05-30",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 210000,
+        "adresse_numero": "12",
+        "adresse_nom_voie": "Rue Jean Jaurès",
+        "code_postal": "35000",
+        "nom_commune": "Rennes",
+        "surface_reelle_bati": 58,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-1.6777, 48.1173]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 16,
+        "date_mutation": "2021-09-08",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 480000,
+        "adresse_numero": "27",
+        "adresse_nom_voie": "Rue de la Paix",
+        "code_postal": "75002",
+        "nom_commune": "Paris",
+        "surface_reelle_bati": 90,
+        "nombre_pieces_principales": 4,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [2.3320, 48.8698]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 17,
+        "date_mutation": "2022-12-10",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 320000,
+        "adresse_numero": "15",
+        "adresse_nom_voie": "Rue Pasteur",
+        "code_postal": "67000",
+        "nom_commune": "Strasbourg",
+        "surface_reelle_bati": 75,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [7.7455, 48.5734]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 18,
+        "date_mutation": "2020-11-25",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 185000,
+        "adresse_numero": "9",
+        "adresse_nom_voie": "Rue Victor Hugo",
+        "code_postal": "37000",
+        "nom_commune": "Tours",
+        "surface_reelle_bati": 60,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [0.6848, 47.3941]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 19,
+        "date_mutation": "2023-04-05",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 550000,
+        "adresse_numero": "18",
+        "adresse_nom_voie": "Rue Molière",
+        "code_postal": "69006",
+        "nom_commune": "Lyon",
+        "surface_reelle_bati": 105,
+        "nombre_pieces_principales": 5,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [4.8456, 45.7710]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": 20,
+        "date_mutation": "2021-02-15",
+        "nature_mutation": "Vente",
+        "valeur_fonciere": 230000,
+        "adresse_numero": "7",
+        "adresse_nom_voie": "Rue Voltaire",
+        "code_postal": "44000",
+        "nom_commune": "Nantes",
+        "surface_reelle_bati": 62,
+        "nombre_pieces_principales": 3,
+        "type_local": "Appartement"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-1.5620, 47.2150]
+      }
+    }
+  ]
+}
