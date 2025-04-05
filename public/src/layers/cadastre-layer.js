@@ -5,11 +5,12 @@
 
 import { getMap } from './leaflet-base.js';
 import logger from '../utils/log.js';
+import { API_URLS } from '../config.js'; // ✅ use config
 
 let cadastreLayer = null;
 let isActive = false;
 
-const API_CARTO_BASE = 'https://apicarto.ign.fr/api/cadastre/parcelle';
+const API_CARTO_BASE = API_URLS.carto.cadastre; // ✅ centralized URL
 
 // Sample INSEE code - replace with dynamic detection later
 const DEFAULT_INSEE = '75056'; // Paris
