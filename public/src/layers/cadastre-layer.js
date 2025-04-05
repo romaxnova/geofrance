@@ -1,151 +1,74 @@
 /**
- * Cadastre layer functionality
- * Handles cadastre layer visualization from the IGN WMS service
+ * Cadastre layer functionality (API Carto)
+ * Uses IGN API Carto to display cadastral parcels as GeoJSON features
  */
 
-import { API_URLS, LAYER_CONFIG } from '../config.js';
-import logger from '../utils/log.js';
 import { getMap } from './leaflet-base.js';
+import logger from '../utils/log.js';
 
 let cadastreLayer = null;
+let isActive = false;
+
+const API_CARTO_BASE = 'https://apicarto.ign.fr/api/cadastre/parcelle';
+
+// Sample INSEE code - replace with dynamic detection later
+const DEFAULT_INSEE = '75056'; // Paris
 
 /**
- * Initialize the Cadastre layer
- * @returns {Object} Cadastre layer instance
+ * Build the query URL for API Carto
+ * @param {string} insee - INSEE code of the commune
+ */
+function buildApiUrl(insee = DEFAULT_INSEE) {
+  const url = new URL(API_CARTO_BASE);
+  url.searchParams.append('code_insee', insee);
+  url.searchParams.append('source_ign', 'PCI');
+  url.searchParams.append('_limit', '1000');
+  return url.toString();
+}
+
+/**
+ * Initialize the cadastre layer (fetch + GeoJSON render)
  */
 export function initCadastreLayer() {
-    logger.info('Initializing Cadastre layer');
-    
-    try {
-        // Get map instance
-        const map = getMap();
-        
-        // Create WMS layer for cadastre
-        cadastreLayer = L.tileLayer.wms(API_URLS.ign.cadastreWMS, {
-            layers: LAYER_CONFIG.ign.cadastre.layers,
-            format: LAYER_CONFIG.ign.cadastre.format,
-            transparent: LAYER_CONFIG.ign.cadastre.transparent,
-            opacity: LAYER_CONFIG.ign.cadastre.opacity,
-            styles: LAYER_CONFIG.ign.cadastre.styles,
-            attribution: '&copy; <a href="https://geoservices.ign.fr/">IGN</a>'
-        });
-        
-        logger.info('Cadastre layer initialized successfully');
-        
-        // Connect toggle button
-        connectToggleButton();
-        
-        return cadastreLayer;
-    } catch (error) {
-        logger.error('Failed to initialize Cadastre layer:', error);
-        throw error;
-    }
-}
+  logger.info('Initializing API Carto cadastre layer');
+  const map = getMap();
 
-/**
- * Connect the cadastre layer toggle button
- */
-function connectToggleButton() {
-    const toggleButton = document.getElementById('cadastre-layer-toggle');
-    
-    if (!toggleButton) {
-        logger.warn('Cadastre layer toggle button not found');
-        return;
-    }
-    
-    toggleButton.addEventListener('change', function() {
-        const isChecked = this.checked;
-        logger.info(`Cadastre layer toggle changed: ${isChecked}`);
-        
-        if (isChecked) {
-            showCadastreLayer();
-        } else {
-            hideCadastreLayer();
-        }
-    });
-    
-    logger.debug('Cadastre layer toggle button connected');
-}
+  const checkbox = document.querySelector('#toggle-cadastre');
+  if (!checkbox) {
+    logger.error('Missing cadastre toggle checkbox');
+    return;
+  }
 
-/**
- * Show the cadastre layer on the map
- */
-export function showCadastreLayer() {
-    logger.info('Showing cadastre layer');
-    
-    try {
-        const map = getMap();
-        
-        if (!cadastreLayer) {
-            cadastreLayer = initCadastreLayer();
-        }
-        
-        cadastreLayer.addTo(map);
-        
-        // Show legend
-        const legend = document.getElementById('cadastre-legend');
-        if (legend) {
-            legend.style.display = 'block';
-        }
-        
-        logger.info('Cadastre layer shown successfully');
-    } catch (error) {
-        logger.error('Failed to show cadastre layer:', error);
-    }
-}
+  checkbox.addEventListener('change', async (event) => {
+    isActive = event.target.checked;
+    if (isActive) {
+      logger.info('Loading cadastre from API Carto...');
+      const apiUrl = buildApiUrl();
+      try {
+        const res = await fetch(apiUrl);
+        const geojson = await res.json();
 
-/**
- * Hide the cadastre layer from the map
- */
-export function hideCadastreLayer() {
-    logger.info('Hiding cadastre layer');
-    
-    try {
-        const map = getMap();
-        
-        if (cadastreLayer) {
-            map.removeLayer(cadastreLayer);
-            
-            // Hide legend
-            const legend = document.getElementById('cadastre-legend');
-            if (legend) {
-                legend.style.display = 'none';
-            }
-            
-            logger.info('Cadastre layer hidden successfully');
-        } else {
-            logger.warn('No cadastre layer to hide');
-        }
-    } catch (error) {
-        logger.error('Failed to hide cadastre layer:', error);
+        cadastreLayer = L.geoJSON(geojson, {
+          style: {
+            color: '#cc6600',
+            weight: 1,
+            fillOpacity: 0.2
+          },
+          onEachFeature: (feature, layer) => {
+            const props = feature.properties;
+            layer.bindPopup(`Parcelle: ${props.section || ''}-${props.numero || ''}`);
+          }
+        }).addTo(map);
+        logger.info(`Cadastre loaded (${geojson.features.length} features)`);
+      } catch (err) {
+        logger.error('Error loading cadastre:', err);
+      }
+    } else {
+      if (cadastreLayer) {
+        map.removeLayer(cadastreLayer);
+        cadastreLayer = null;
+        logger.info('Cadastre layer removed');
+      }
     }
+  });
 }
-
-/**
- * Test function to verify the cadastre layer is working
- */
-export function testCadastreLayer() {
-    logger.info('Testing cadastre layer functionality');
-    
-    try {
-        const layer = initCadastreLayer();
-        
-        if (layer) {
-            logger.info('Cadastre layer test successful');
-            return true;
-        } else {
-            logger.error('Cadastre layer test failed: layer not initialized');
-            return false;
-        }
-    } catch (error) {
-        logger.error('Cadastre layer test failed:', error);
-        return false;
-    }
-}
-
-export default {
-    initCadastreLayer,
-    showCadastreLayer,
-    hideCadastreLayer,
-    testCadastreLayer
-};
