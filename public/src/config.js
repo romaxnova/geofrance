@@ -39,6 +39,10 @@ export const API_URLS = {
     dvf: {
         // We'll use a static sample for this implementation
         sampleData: '../data/dvf-sample.json'
+    },
+    // API Carto Cadastre (GeoJSON-based)
+    carto: {
+        cadastre: 'https://apicarto.ign.fr/api/cadastre/parcelle'
     }
 };
 
