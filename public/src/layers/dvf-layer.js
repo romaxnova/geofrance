@@ -96,13 +96,24 @@ async function updateDVFLayer() {
       return;
     }
 
+    // Remove duplicate entries (based on lat/lon, price, date)
+    const seen = new Set();
+    const unique = [];
+    data.forEach(entry => {
+      const key = `${entry.latitude}-${entry.longitude}-${entry.valeur_fonciere}-${entry.date_mutation}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(entry);
+      }
+    });
+
     if (dvfLayer) {
       dvfLayer.clearLayers();
     } else {
       dvfLayer = L.markerClusterGroup(); // use clustering
     }
 
-    data.forEach(entry => {
+    unique.forEach(entry => {
       const lat = parseFloat(entry.latitude);
       const lon = parseFloat(entry.longitude);
       if (!lat || !lon) return;
@@ -138,7 +149,7 @@ async function updateDVFLayer() {
     });
 
     dvfLayer.addTo(map);
-    logger.info(`DVF layer updated (${data.length} records)`);
+    logger.info(`DVF layer updated (${unique.length} unique records)`);
   } catch (err) {
     logger.error('Failed to load DVF API data:', err);
   }
