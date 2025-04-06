@@ -16,6 +16,7 @@ export function initDVFLayer() {
 
   const map = getMap();
   const checkbox = document.querySelector('#dvf-layer-toggle');
+  const filtersPanel = document.querySelector('#dvf-filters');
 
   if (!checkbox) {
     logger.warn('DVF layer toggle not found');
@@ -25,6 +26,7 @@ export function initDVFLayer() {
   checkbox.addEventListener('change', async (e) => {
     if (e.target.checked) {
       map.on('moveend', updateDVFLayer);
+      if (filtersPanel) filtersPanel.style.display = 'block';
       await updateDVFLayer();
     } else {
       if (dvfLayer) {
@@ -32,9 +34,18 @@ export function initDVFLayer() {
         dvfLayer = null;
         logger.info('DVF layer removed');
       }
+      if (filtersPanel) filtersPanel.style.display = 'none';
       map.off('moveend', updateDVFLayer);
     }
   });
+
+  const applyBtn = document.getElementById('apply-filters');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      logger.info('Appliquer button clicked — updating DVF layer');
+      updateDVFLayer();
+    });
+  }
 }
 
 /**
@@ -58,10 +69,26 @@ async function updateDVFLayer() {
   else if (zoom < 11) sampleLimit = 300;
   else if (zoom < 13) sampleLimit = 600;
 
-  logger.info('Fetching DVF data for bounds:', bbox);
+  const params = new URLSearchParams({ bbox, limit: sampleLimit });
+
+  const yearMin = document.getElementById('year-min')?.value;
+  const yearMax = document.getElementById('year-max')?.value;
+  const priceMin = document.getElementById('price-min')?.value;
+  const priceMax = document.getElementById('price-max')?.value;
+  const priceM2Min = document.getElementById('price-m2-min')?.value;
+  const priceM2Max = document.getElementById('price-m2-max')?.value;
+
+  if (yearMin) params.append('year_min', yearMin);
+  if (yearMax) params.append('year_max', yearMax);
+  if (priceMin) params.append('price_min', priceMin);
+  if (priceMax) params.append('price_max', priceMax);
+  if (priceM2Min) params.append('price_m2_min', priceM2Min);
+  if (priceM2Max) params.append('price_m2_max', priceM2Max);
+
+  logger.info('Fetching DVF data for bounds and filters:', params.toString());
 
   try {
-    const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf?bbox=${bbox}&limit=${sampleLimit}`);
+    const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf?${params.toString()}`);
     const data = await res.json();
 
     if (!data || data.length === 0) {
