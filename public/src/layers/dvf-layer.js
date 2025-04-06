@@ -99,7 +99,7 @@ async function updateDVFLayer() {
     if (dvfLayer) {
       dvfLayer.clearLayers();
     } else {
-      dvfLayer = L.layerGroup();
+      dvfLayer = L.markerClusterGroup(); // use clustering
     }
 
     data.forEach(entry => {
@@ -134,7 +134,7 @@ async function updateDVFLayer() {
         </div>
       `);
 
-      marker.addTo(dvfLayer);
+      dvfLayer.addLayer(marker);
     });
 
     dvfLayer.addTo(map);
