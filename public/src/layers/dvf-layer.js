@@ -46,6 +46,13 @@ export function initDVFLayer() {
       updateDVFLayer();
     });
   }
+
+  const closePanel = document.getElementById('close-property-panel');
+  if (closePanel) {
+    closePanel.addEventListener('click', () => {
+      document.getElementById('property-panel').classList.add('hidden');
+    });
+  }
 }
 
 /**
@@ -96,7 +103,6 @@ async function updateDVFLayer() {
       return;
     }
 
-    // Remove duplicate entries (based on lat/lon, price, date)
     const seen = new Set();
     const unique = [];
     data.forEach(entry => {
@@ -110,18 +116,13 @@ async function updateDVFLayer() {
     if (dvfLayer) {
       dvfLayer.clearLayers();
     } else {
-      dvfLayer = L.markerClusterGroup(); // use clustering
+      dvfLayer = L.markerClusterGroup();
     }
 
     unique.forEach(entry => {
       const lat = parseFloat(entry.latitude);
       const lon = parseFloat(entry.longitude);
       if (!lat || !lon) return;
-
-      const price = parseFloat(entry.valeur_fonciere);
-      const surface = parseFloat(entry.surface_reelle_bati);
-      const date = new Date(entry.date_mutation).toLocaleDateString('fr-FR');
-      const prixM2 = surface > 0 ? (price / surface) : null;
 
       const marker = L.circleMarker([lat, lon], {
         radius: 6,
@@ -132,18 +133,17 @@ async function updateDVFLayer() {
         fillOpacity: 0.7
       });
 
-      const formattedPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
-      const prixM2Text = prixM2 ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(prixM2) : '-';
+      marker.on('click', () => {
+        const latStr = lat.toFixed(5);
+        const lonStr = lon.toFixed(5);
 
-      marker.bindPopup(`
-        <div class="dvf-popup">
-          <h4>${entry.type_local || 'Bien'}</h4>
-          <p><strong>Prix:</strong> ${formattedPrice}</p>
-          <p><strong>Surface:</strong> ${surface || '?'} m²</p>
-          <p><strong>Date:</strong> ${date}</p>
-          <p><strong>Prix/m²:</strong> ${prixM2Text}</p>
-        </div>
-      `);
+        fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?bbox=${lon - 0.001},${lat - 0.001},${lon + 0.001},${lat + 0.001}`)
+          .then(r => r.json())
+          .then(data => {
+            const property = data.find(p => p.latitude.toFixed(5) === latStr && p.longitude.toFixed(5) === lonStr);
+            if (property) showPropertyPanel(property);
+          });
+      });
 
       dvfLayer.addLayer(marker);
     });
@@ -153,4 +153,35 @@ async function updateDVFLayer() {
   } catch (err) {
     logger.error('Failed to load DVF API data:', err);
   }
+}
+
+function showPropertyPanel(property) {
+  const panel = document.getElementById('property-panel');
+  const addressEl = document.getElementById('property-address');
+  const salesEl = document.getElementById('property-sales');
+
+  panel.classList.remove('hidden');
+  addressEl.textContent = property.adresse;
+  salesEl.innerHTML = '';
+
+  const sale = document.createElement('div');
+  sale.className = 'property-sale';
+  sale.innerHTML = `
+    <h4>Mutation du ${new Date(property.date_mutation).toLocaleDateString('fr-FR')}</h4>
+    <p><strong>Valeur foncière:</strong> ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(property.valeur_fonciere)}</p>
+    <p><strong>Lots:</strong></p>
+  `;
+
+  property.lots.forEach(lot => {
+    const lotEl = document.createElement('div');
+    lotEl.className = 'lot';
+    lotEl.innerHTML = `
+      - ${lot.type_local || 'Type inconnu'}
+      ${lot.surface_reelle_bati ? `– ${lot.surface_reelle_bati} m²` : ''}
+      ${lot.nombre_pieces_principales ? `– ${lot.nombre_pieces_principales} pièce(s)` : ''}
+    `;
+    sale.appendChild(lotEl);
+  });
+
+  salesEl.appendChild(sale);
 }
