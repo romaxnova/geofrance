@@ -123,3 +123,65 @@ footer {
         margin-top: 1rem;
     }
 }
+
+/* Property panel (Pappers-style) */
+.property-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 360px;
+    max-height: 100%;
+    background: #fff;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    z-index: 2000;
+}
+
+.property-panel.active {
+    transform: translateX(0%);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.panel-header h2 {
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.panel-header button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.mutation-block {
+    margin-bottom: 1.2rem;
+    border-left: 4px solid #0d46a8;
+    padding-left: 1rem;
+}
+
+.mutation-block h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    color: #0d46a8;
+}
+
+.lot-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
