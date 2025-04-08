@@ -17,7 +17,6 @@ export function initDVFLayer() {
   const map = getMap();
   const checkbox = document.querySelector('#dvf-layer-toggle');
   const filtersPanel = document.querySelector('#dvf-filters');
-  const closePanel = document.getElementById('property-panel-close');
 
   if (!checkbox) {
     logger.warn('DVF layer toggle not found');
@@ -41,12 +40,6 @@ export function initDVFLayer() {
       map.off('moveend', updateDVFLayer);
     }
   });
-
-  if (closePanel) {
-    closePanel.addEventListener('click', () => {
-      document.getElementById('property-panel').classList.add('hidden');
-    });
-  }
 
   const applyBtn = document.getElementById('apply-filters');
   if (applyBtn) {
@@ -162,7 +155,7 @@ function showPropertyPanel(property) {
   panel.innerHTML = `
     <div class="property-header">
       <h3>${property.adresse}</h3>
-      <button id="property-panel-close">✕</button>
+      <button id="property-panel-close">&times;</button>
     </div>
     <div class="property-body">
       ${property.mutations.map(m => `
@@ -185,10 +178,12 @@ function showPropertyPanel(property) {
     </div>
   `;
 
-  const closeBtn = document.getElementById('property-panel-close');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      panel.classList.add('hidden');
-    });
-  }
+  setTimeout(() => {
+    const closeBtn = document.getElementById('property-panel-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        document.getElementById('property-panel').classList.add('hidden');
+      });
+    }
+  }, 0);
 }
