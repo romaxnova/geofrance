@@ -1,6 +1,6 @@
 /**
  * DVF (Demandes de Valeurs Foncières) layer functionality — using API backend
- * Dynamically loads data for current map bounds and integrates popup info with zoom-sensitive sampling
+ * Displays property sale details grouped by address and mutation.
  */
 
 import { getMap } from './leaflet-base.js';
@@ -8,9 +8,6 @@ import logger from '../utils/log.js';
 
 let dvfLayer = null;
 
-/**
- * Initialize the DVF layer
- */
 export function initDVFLayer() {
   logger.info('Initializing DVF layer (via API)');
 
@@ -41,10 +38,7 @@ export function initDVFLayer() {
 
   const applyBtn = document.getElementById('apply-filters');
   if (applyBtn) {
-    applyBtn.addEventListener('click', () => {
-      logger.info('Appliquer button clicked — updating DVF layer');
-      updateDVFLayer();
-    });
+    applyBtn.addEventListener('click', () => updateDVFLayer());
   }
 
   const closePanel = document.getElementById('close-property-panel');
@@ -55,9 +49,6 @@ export function initDVFLayer() {
   }
 }
 
-/**
- * Fetch and render DVF data for the current map view
- */
 async function updateDVFLayer() {
   const map = getMap();
   const bounds = map.getBounds();
@@ -70,7 +61,6 @@ async function updateDVFLayer() {
     bounds.getNorthEast().lat.toFixed(5)
   ].join(',');
 
-  // Adjust sampling limit by zoom level (fewer points at low zoom)
   let sampleLimit = 1000;
   if (zoom < 8) sampleLimit = 100;
   else if (zoom < 11) sampleLimit = 300;
@@ -136,7 +126,6 @@ async function updateDVFLayer() {
       marker.on('click', () => {
         const latStr = lat.toFixed(5);
         const lonStr = lon.toFixed(5);
-
         fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?bbox=${lon - 0.001},${lat - 0.001},${lon + 0.001},${lat + 0.001}`)
           .then(r => r.json())
           .then(data => {
@@ -164,24 +153,33 @@ function showPropertyPanel(property) {
   addressEl.textContent = property.adresse;
   salesEl.innerHTML = '';
 
-  const sale = document.createElement('div');
-  sale.className = 'property-sale';
-  sale.innerHTML = `
-    <h4>Mutation du ${new Date(property.date_mutation).toLocaleDateString('fr-FR')}</h4>
-    <p><strong>Valeur foncière:</strong> ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(property.valeur_fonciere)}</p>
-    <p><strong>Lots:</strong></p>
-  `;
-
+  // Group by id_mutation
+  const grouped = {};
   property.lots.forEach(lot => {
-    const lotEl = document.createElement('div');
-    lotEl.className = 'lot';
-    lotEl.innerHTML = `
-      - ${lot.type_local || 'Type inconnu'}
-      ${lot.surface_reelle_bati ? `– ${lot.surface_reelle_bati} m²` : ''}
-      ${lot.nombre_pieces_principales ? `– ${lot.nombre_pieces_principales} pièce(s)` : ''}
-    `;
-    sale.appendChild(lotEl);
+    if (!grouped[lot.id_mutation]) grouped[lot.id_mutation] = { date: lot.date_mutation, valeur: lot.valeur_fonciere, lots: [] };
+    grouped[lot.id_mutation].lots.push(lot);
   });
 
-  salesEl.appendChild(sale);
+  Object.entries(grouped).forEach(([mutationId, mutation]) => {
+    const card = document.createElement('div');
+    card.className = 'property-sale';
+    card.innerHTML = `
+      <h4>Mutation du ${new Date(mutation.date).toLocaleDateString('fr-FR')}</h4>
+      <p><strong>Valeur foncière:</strong> ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(mutation.valeur)}</p>
+      <p><strong>Lots:</strong></p>
+    `;
+
+    mutation.lots.forEach(lot => {
+      const lotEl = document.createElement('div');
+      lotEl.className = 'lot';
+      lotEl.innerHTML = `
+        - ${lot.type_local || 'Type inconnu'}
+        ${lot.surface_reelle_bati ? `– ${lot.surface_reelle_bati} m²` : ''}
+        ${lot.nombre_pieces_principales ? `– ${lot.nombre_pieces_principales} pièce(s)` : ''}
+      `;
+      card.appendChild(lotEl);
+    });
+
+    salesEl.appendChild(card);
+  });
 }

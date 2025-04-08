@@ -157,34 +157,24 @@
     margin: 1rem 0;
 }
 
-.property-panel {
-    position: absolute;
-    top: 70px;
-    right: 0;
-    width: 360px;
-    max-height: 80%;
-    overflow-y: auto;
-    background: #fff;
-    border-left: 1px solid #ccc;
-    box-shadow: -2px 0 6px rgba(0,0,0,0.1);
+#property-panel {
+    background: white;
     padding: 1rem;
-    z-index: 999;
-    transition: transform 0.3s ease-in-out;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.15);
+    margin-top: 1rem;
+    max-height: 60vh;
+    overflow-y: auto;
   }
   
-  .property-panel.hidden {
-    transform: translateX(100%);
+  #property-panel.hidden {
+    display: none;
   }
   
   .property-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-  
-  .property-header h3 {
-    margin: 0;
-    font-size: 1.2rem;
   }
   
   #close-property-panel {
@@ -196,18 +186,14 @@
   }
   
   .property-sale {
-    margin: 1rem 0;
-    border-top: 1px solid #eee;
-    padding-top: 1rem;
+    border-top: 1px solid #ddd;
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
   }
   
-  .property-sale h4 {
-    margin-bottom: 0.5rem;
-  }
-  
-  .property-sale .lot {
-    font-size: 0.9rem;
+  .lot {
     margin-left: 1rem;
-    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+    color: #444;
   }
   
