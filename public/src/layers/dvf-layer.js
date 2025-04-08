@@ -1,6 +1,6 @@
 /**
  * DVF (Demandes de Valeurs Foncières) layer functionality — using API backend
- * Displays property sale details grouped by address and mutation.
+ * Dynamically loads data for current map bounds and integrates popup info with zoom-sensitive sampling
  */
 
 import { getMap } from './leaflet-base.js';
@@ -8,12 +8,16 @@ import logger from '../utils/log.js';
 
 let dvfLayer = null;
 
+/**
+ * Initialize the DVF layer
+ */
 export function initDVFLayer() {
   logger.info('Initializing DVF layer (via API)');
 
   const map = getMap();
   const checkbox = document.querySelector('#dvf-layer-toggle');
   const filtersPanel = document.querySelector('#dvf-filters');
+  const closePanel = document.getElementById('property-panel-close');
 
   if (!checkbox) {
     logger.warn('DVF layer toggle not found');
@@ -32,23 +36,30 @@ export function initDVFLayer() {
         logger.info('DVF layer removed');
       }
       if (filtersPanel) filtersPanel.style.display = 'none';
+      const panel = document.getElementById('property-panel');
+      if (panel) panel.classList.add('hidden');
       map.off('moveend', updateDVFLayer);
     }
   });
 
-  const applyBtn = document.getElementById('apply-filters');
-  if (applyBtn) {
-    applyBtn.addEventListener('click', () => updateDVFLayer());
-  }
-
-  const closePanel = document.getElementById('close-property-panel');
   if (closePanel) {
     closePanel.addEventListener('click', () => {
       document.getElementById('property-panel').classList.add('hidden');
     });
   }
+
+  const applyBtn = document.getElementById('apply-filters');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => {
+      logger.info('Appliquer button clicked — updating DVF layer');
+      updateDVFLayer();
+    });
+  }
 }
 
+/**
+ * Fetch and render DVF data for the current map view
+ */
 async function updateDVFLayer() {
   const map = getMap();
   const bounds = map.getBounds();
@@ -126,11 +137,12 @@ async function updateDVFLayer() {
       marker.on('click', () => {
         const latStr = lat.toFixed(5);
         const lonStr = lon.toFixed(5);
+
         fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?bbox=${lon - 0.001},${lat - 0.001},${lon + 0.001},${lat + 0.001}`)
           .then(r => r.json())
-          .then(data => {
-            const property = data.find(p => p.latitude.toFixed(5) === latStr && p.longitude.toFixed(5) === lonStr);
-            if (property) showPropertyPanel(property);
+          .then(grouped => {
+            const match = grouped.find(g => g.latitude.toFixed(5) === latStr && g.longitude.toFixed(5) === lonStr);
+            if (match) showPropertyPanel(match);
           });
       });
 
@@ -146,40 +158,37 @@ async function updateDVFLayer() {
 
 function showPropertyPanel(property) {
   const panel = document.getElementById('property-panel');
-  const addressEl = document.getElementById('property-address');
-  const salesEl = document.getElementById('property-sales');
-
   panel.classList.remove('hidden');
-  addressEl.textContent = property.adresse;
-  salesEl.innerHTML = '';
+  panel.innerHTML = `
+    <div class="property-header">
+      <h3>${property.adresse}</h3>
+      <button id="property-panel-close">✕</button>
+    </div>
+    <div class="property-body">
+      ${property.mutations.map(m => `
+        <div class="mutation-block">
+          <div class="mutation-header">
+            <span>${new Date(m.date_mutation).toLocaleDateString('fr-FR')}</span>
+            <span class="price">${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(m.valeur_fonciere)}</span>
+          </div>
+          <div class="lots">
+            ${m.lots.map(l => `
+              <div class="lot-row">
+                <span>${l.type_local || 'Type inconnu'}</span>
+                <span>${l.surface_reelle_bati ? l.surface_reelle_bati + ' m²' : ''}</span>
+                <span>${l.nombre_pieces_principales ? l.nombre_pieces_principales + ' pièces' : ''}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 
-  // Group by id_mutation
-  const grouped = {};
-  property.lots.forEach(lot => {
-    if (!grouped[lot.id_mutation]) grouped[lot.id_mutation] = { date: lot.date_mutation, valeur: lot.valeur_fonciere, lots: [] };
-    grouped[lot.id_mutation].lots.push(lot);
-  });
-
-  Object.entries(grouped).forEach(([mutationId, mutation]) => {
-    const card = document.createElement('div');
-    card.className = 'property-sale';
-    card.innerHTML = `
-      <h4>Mutation du ${new Date(mutation.date).toLocaleDateString('fr-FR')}</h4>
-      <p><strong>Valeur foncière:</strong> ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(mutation.valeur)}</p>
-      <p><strong>Lots:</strong></p>
-    `;
-
-    mutation.lots.forEach(lot => {
-      const lotEl = document.createElement('div');
-      lotEl.className = 'lot';
-      lotEl.innerHTML = `
-        - ${lot.type_local || 'Type inconnu'}
-        ${lot.surface_reelle_bati ? `– ${lot.surface_reelle_bati} m²` : ''}
-        ${lot.nombre_pieces_principales ? `– ${lot.nombre_pieces_principales} pièce(s)` : ''}
-      `;
-      card.appendChild(lotEl);
+  const closeBtn = document.getElementById('property-panel-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      panel.classList.add('hidden');
     });
-
-    salesEl.appendChild(card);
-  });
+  }
 }
