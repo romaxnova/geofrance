@@ -163,7 +163,15 @@ function openPropertyPanel(data) {
 }
 
 function renderPropertyPanel(data) {
-  if (!data || !data.lots || data.lots.length === 0) return '<p>Aucune donnée disponible à cette adresse.</p>';
+  if (!data || !data.lots || data.lots.length === 0) {
+    return '<p>Aucune donnée disponible à cette adresse.</p>';
+  }
+
+  const date = new Date(data.date_mutation).toLocaleDateString('fr-FR');
+  const formattedPrice = new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR'
+  }).format(data.valeur_fonciere);
 
   return `
     <div class="panel-header">
@@ -172,14 +180,21 @@ function renderPropertyPanel(data) {
     </div>
     <div class="mutations-container">
       <div class="mutation-block">
-        <h3>${new Date(data.date_mutation).toLocaleDateString('fr-FR')} — ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(data.valeur_fonciere)}</h3>
-        ${data.lots.map(lot => `
-          <div class="lot-row">
-            <div><strong>${lot.type_local || 'Bien'}</strong></div>
-            <div>${lot.Surface ? `${lot.Surface} m²` : '?'}${lot.Carrez ? ` <small>(Carrez: ${lot.Carrez} m²)</small>` : ''}</div>
-            <div>${lot.nombre_pieces_principales || '?'} pièces</div>
-          </div>
-        `).join('')}
+        <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
+        ${data.lots.map((lot, index) => {
+          const surface = lot.Surface ? `${lot.Surface} m²` : '';
+          const carrez = lot.Carrez ? ` (Carrez: ${lot.Carrez} m²)` : '';
+          const type = lot.type_local || 'Bien';
+          const pieces = lot.nombre_pieces_principales ?? '?';
+
+          return `
+            <div class="lot-row">
+              <div><strong>${type}</strong></div>
+              <div>${surface}${carrez}</div>
+              <div>${pieces} pièces</div>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   `;
