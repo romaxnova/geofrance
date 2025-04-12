@@ -4,145 +4,150 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carte des Risques Environnementaux - France</title>
-    
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""/>
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
     <!-- Leaflet MarkerCluster CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/layer-controls.css">
-    
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""></script>
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
     <!-- Leaflet MarkerCluster JS -->
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
 </head>
 <body>
-    <header>
-        <h1>Carte des Risques Environnementaux - France</h1>
-    </header>
-    
-    <main>
-        <div class="search-container">
-            <input type="text" id="address-search" placeholder="Rechercher une adresse...">
-            <div id="search-results" class="search-results"></div>
-        </div>
-        
-        <div class="map-container">
-            <div id="map"></div>
-        <div id="property-panel" class="property-panel"></div>
-        </div>
-        
-        <div class="layer-controls">
-            <h3>Couches de données</h3>
-            
-            <div class="layer-section">
-                <h4>Risques environnementaux</h4>
-                <div class="layer-toggle">
-                    <input type="checkbox" id="risk-layer-toggle">
-                    <label for="risk-layer-toggle">Risque d'inondation</label>
-                </div>
-                <div class="layer-description">
-                    Affiche les zones exposées au risque d'inondation en France métropolitaine.
-                    Source: Géorisques
-                </div>
-                <div id="layer-legend" class="legend" style="margin-top: 1rem; display: none;">
-                    <h4>Légende</h4>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: rgba(0, 120, 255, 0.7);"></div>
-                        <span>Zone inondable</span>
-                    </div>
-                </div>
+<header>
+    <h1>Carte des Risques Environnementaux - France</h1>
+</header>
+
+<main>
+    <div class="search-container">
+        <input type="text" id="address-search" placeholder="Rechercher une adresse...">
+        <div id="search-results" class="search-results"></div>
+    </div>
+
+    <div class="map-container">
+        <div id="map"></div>
+
+        <!-- Right Panel for Property Sales -->
+        <div id="property-panel" class="property-panel hidden">
+            <button class="close-panel" onclick="document.getElementById('property-panel').classList.add('hidden')">&times;</button>
+            <div id="property-content">
+                <!-- Property sales data dynamically injected here -->
             </div>
-            
-            <div class="layer-section">
-                <h4>Données immobilières</h4>
-                <div class="layer-toggle">
-                    <input type="checkbox" id="cadastre-layer-toggle">
-                    <label for="cadastre-layer-toggle">Cadastre</label>
-                </div>
-                <div class="layer-description">
-                    Affiche les parcelles cadastrales.
-                    Source: IGN
-                </div>
-                <div id="cadastre-legend" class="legend" style="margin-top: 1rem; display: none;">
-                    <h4>Légende</h4>
-                    <div class="legend-item">
-                        <div class="legend-color" style="border: 1px solid #333; background-color: transparent;"></div>
-                        <span>Parcelles cadastrales</span>
-                    </div>
-                </div>
-                
-                <div class="layer-toggle">
-                    <input type="checkbox" id="dvf-layer-toggle">
-                    <label for="dvf-layer-toggle">Valeurs foncières (DVF)</label>
-                </div>
-                <div class="layer-description">
-                    Affiche les transactions immobilières des 5 dernières années.
-                    Source: DVF
-                </div>
-                <div id="dvf-legend" class="legend" style="margin-top: 1rem; display: none;">
-                    <h4>Légende</h4>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background-color: #1e88e5; border-radius: 50%;"></div>
-                        <span>Vente immobilière</span>
-                    </div>
-                </div>
-                
-                <div id="dvf-filters" class="filters" style="margin-top: 1rem; display: none;">
-                    <h4>Filtres</h4>
+        </div>
+    </div>
 
-                    <div class="filter-item">
-                        <label for="year-min">Année min:</label>
-                        <input type="number" id="year-min" min="2014" max="2024" placeholder="2019">
-                    </div>
+    <!-- Left Panel for Filters -->
+    <div class="layer-controls">
+        <h3>Couches de données</h3>
 
-                    <div class="filter-item">
-                        <label for="year-max">Année max:</label>
-                        <input type="number" id="year-max" min="2014" max="2024" placeholder="2024">
-                    </div>
-
-                    <div class="filter-item">
-                        <label for="price-min">Prix min (€):</label>
-                        <input type="number" id="price-min" min="0" step="10000" placeholder="0">
-                    </div>
-
-                    <div class="filter-item">
-                        <label for="price-max">Prix max (€):</label>
-                        <input type="number" id="price-max" min="0" step="10000" placeholder="2 000 000">
-                    </div>
-
-                    <div class="filter-item">
-                        <label for="price-m2-min">Prix/m² min:</label>
-                        <input type="number" id="price-m2-min" min="0" step="100" placeholder="0">
-                    </div>
-
-                    <div class="filter-item">
-                        <label for="price-m2-max">Prix/m² max:</label>
-                        <input type="number" id="price-m2-max" min="0" step="100" placeholder="20 000">
-                    </div>
-
-                    <button id="apply-filters" class="filter-button">Appliquer</button>
+        <div class="layer-section">
+            <h4>Risques environnementaux</h4>
+            <div class="layer-toggle">
+                <input type="checkbox" id="risk-layer-toggle">
+                <label for="risk-layer-toggle">Risque d'inondation</label>
+            </div>
+            <div class="layer-description">
+                Affiche les zones exposées au risque d'inondation en France métropolitaine.
+                Source: Géorisques
+            </div>
+            <div id="layer-legend" class="legend" style="margin-top: 1rem; display: none;">
+                <h4>Légende</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgba(0, 120, 255, 0.7);"></div>
+                    <span>Zone inondable</span>
                 </div>
             </div>
         </div>
-    </main>
-    
-    <footer>
-        <p>Application de visualisation des risques environnementaux en France</p>
-    </footer>
-    
-    <!-- Application Scripts -->
-    <script type="module" src="./src/app.js"></script>
+
+        <div class="layer-section">
+            <h4>Données immobilières</h4>
+            <div class="layer-toggle">
+                <input type="checkbox" id="cadastre-layer-toggle">
+                <label for="cadastre-layer-toggle">Cadastre</label>
+            </div>
+            <div class="layer-description">
+                Affiche les parcelles cadastrales.
+                Source: IGN
+            </div>
+            <div id="cadastre-legend" class="legend" style="margin-top: 1rem; display: none;">
+                <h4>Légende</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="border: 1px solid #333; background-color: transparent;"></div>
+                    <span>Parcelles cadastrales</span>
+                </div>
+            </div>
+
+            <div class="layer-toggle">
+                <input type="checkbox" id="dvf-layer-toggle">
+                <label for="dvf-layer-toggle">Valeurs foncières (DVF)</label>
+            </div>
+            <div class="layer-description">
+                Affiche les transactions immobilières des 5 dernières années.
+                Source: DVF
+            </div>
+            <div id="dvf-legend" class="legend" style="margin-top: 1rem; display: none;">
+                <h4>Légende</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #1e88e5; border-radius: 50%;"></div>
+                    <span>Vente immobilière</span>
+                </div>
+            </div>
+
+            <div id="dvf-filters" class="filters" style="margin-top: 1rem; display: none;">
+                <h4>Filtres</h4>
+
+                <div class="filter-item">
+                    <label for="year-min">Année min:</label>
+                    <input type="number" id="year-min" min="2014" max="2024" placeholder="2019">
+                </div>
+
+                <div class="filter-item">
+                    <label for="year-max">Année max:</label>
+                    <input type="number" id="year-max" min="2014" max="2024" placeholder="2024">
+                </div>
+
+                <div class="filter-item">
+                    <label for="price-min">Prix min (€):</label>
+                    <input type="number" id="price-min" min="0" step="10000" placeholder="0">
+                </div>
+
+                <div class="filter-item">
+                    <label for="price-max">Prix max (€):</label>
+                    <input type="number" id="price-max" min="0" step="10000" placeholder="2 000 000">
+                </div>
+
+                <div class="filter-item">
+                    <label for="price-m2-min">Prix/m² min:</label>
+                    <input type="number" id="price-m2-min" min="0" step="100" placeholder="0">
+                </div>
+
+                <div class="filter-item">
+                    <label for="price-m2-max">Prix/m² max:</label>
+                    <input type="number" id="price-m2-max" min="0" step="100" placeholder="20 000">
+                </div>
+
+                <button id="apply-filters" class="filter-button">Appliquer</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <p>Application de visualisation des risques environnementaux en France</p>
+</footer>
+
+<!-- Application Scripts -->
+<script type="module" src="./src/app.js"></script>
 </body>
 </html>

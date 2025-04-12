@@ -8,9 +8,6 @@ import logger from '../utils/log.js';
 
 let dvfLayer = null;
 
-/**
- * Initialize the DVF layer
- */
 export function initDVFLayer() {
   logger.info('Initializing DVF layer (via API)');
 
@@ -48,9 +45,6 @@ export function initDVFLayer() {
   }
 }
 
-/**
- * Fetch and render DVF data for the current map view
- */
 async function updateDVFLayer() {
   const map = getMap();
   const bounds = map.getBounds();
@@ -63,7 +57,6 @@ async function updateDVFLayer() {
     bounds.getNorthEast().lat.toFixed(5)
   ].join(',');
 
-  // Adjust sampling limit by zoom level (fewer points at low zoom)
   let sampleLimit = 1000;
   if (zoom < 8) sampleLimit = 100;
   else if (zoom < 11) sampleLimit = 300;
@@ -96,7 +89,6 @@ async function updateDVFLayer() {
       return;
     }
 
-    // Remove duplicate entries (based on lat/lon, price, date)
     const seen = new Set();
     const unique = [];
     data.forEach(entry => {
@@ -110,7 +102,7 @@ async function updateDVFLayer() {
     if (dvfLayer) {
       dvfLayer.clearLayers();
     } else {
-      dvfLayer = L.markerClusterGroup(); // use clustering
+      dvfLayer = L.markerClusterGroup();
     }
 
     unique.forEach(entry => {
@@ -136,17 +128,19 @@ async function updateDVFLayer() {
       const prixM2Text = prixM2 ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(prixM2) : '-';
 
       marker.on('click', async () => {
-      try {
-        const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?lat=${lat}&lon=${lon}`);
-        const grouped = await res.json();
+        try {
+          const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?bbox=${lon - 0.0002},${lat - 0.0002},${lon + 0.0002},${lat + 0.0002}`);
+          const grouped = await res.json();
 
-        const panel = document.getElementById('property-panel');
-        panel.innerHTML = renderPropertyPanel(grouped);
-        panel.classList.add('active');
-      } catch (err) {
-        console.error('Erreur chargement mutations DVF:', err);
-      }
-    });
+          const clickedSale = grouped.find(g => Math.abs(g.latitude - lat) < 0.0001 && Math.abs(g.longitude - lon) < 0.0001);
+
+          const panel = document.getElementById('property-panel');
+          panel.innerHTML = renderPropertyPanel(clickedSale);
+          panel.classList.remove('hidden');
+        } catch (err) {
+          console.error('Erreur chargement mutations DVF:', err);
+        }
+      });
 
       dvfLayer.addLayer(marker);
     });
@@ -157,30 +151,32 @@ async function updateDVFLayer() {
     logger.error('Failed to load DVF API data:', err);
   }
 }
+
 function renderPropertyPanel(data) {
-  if (!data || !data.mutations || data.mutations.length === 0) return '<p>Aucune donnée.</p>';
+  if (!data || !data.lots || data.lots.length === 0) return '<p>Aucune donnée disponible à cette adresse.</p>';
 
   return `
     <div class="panel-header">
       <h2>${data.adresse || 'Adresse inconnue'}</h2>
       <button id="close-panel">&times;</button>
     </div>
-    ${data.mutations.map(mutation => `
+    <div class="mutations-container">
       <div class="mutation-block">
-        <h3>${new Date(mutation.date_mutation).toLocaleDateString('fr-FR')} — ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(mutation.valeur_fonciere)}</h3>
-        ${mutation.lots.map(lot => `
+        <h3>${new Date(data.date_mutation).toLocaleDateString('fr-FR')} — ${new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(data.valeur_fonciere)}</h3>
+        ${data.lots.map(lot => `
           <div class="lot-row">
             <div><strong>${lot.type_local || 'Bien'}</strong></div>
-            <div>${lot.surface_reelle_bati || '?'} m²</div>
+            <div>${lot.Surface ? `${lot.Surface} m²` : '?'}${lot.Carrez ? ` <small>(Carrez: ${lot.Carrez} m²)</small>` : ''}</div>
             <div>${lot.nombre_pieces_principales || '?'} pièces</div>
           </div>
         `).join('')}
       </div>
-    `).join('')}
+    </div>
   `;
 }
+
 document.body.addEventListener('click', e => {
   if (e.target.id === 'close-panel') {
-    document.getElementById('property-panel')?.classList.remove('active');
+    document.getElementById('property-panel')?.classList.add('hidden');
   }
 });
