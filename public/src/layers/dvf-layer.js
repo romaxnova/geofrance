@@ -1,8 +1,3 @@
-/**
- * DVF (Demandes de Valeurs Foncières) layer functionality — using API backend
- * Dynamically loads data for current map bounds and integrates popup info with zoom-sensitive sampling
- */
-
 import { getMap } from './leaflet-base.js';
 import logger from '../utils/log.js';
 
@@ -14,16 +9,24 @@ export function initDVFLayer() {
   const map = getMap();
   const checkbox = document.querySelector('#dvf-layer-toggle');
   const filtersPanel = document.querySelector('#dvf-filters');
+  const toggleBtn = document.getElementById('toggle-dvf-filters');
 
   if (!checkbox) {
     logger.warn('DVF layer toggle not found');
     return;
   }
 
+  // Toggle the filters panel drawer
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      filtersPanel?.classList.toggle('hidden');
+    });
+  }
+
   checkbox.addEventListener('change', async (e) => {
     if (e.target.checked) {
       map.on('moveend', updateDVFLayer);
-      if (filtersPanel) filtersPanel.style.display = 'block';
+      filtersPanel?.classList.remove('hidden');
       await updateDVFLayer();
     } else {
       if (dvfLayer) {
@@ -31,7 +34,7 @@ export function initDVFLayer() {
         dvfLayer = null;
         logger.info('DVF layer removed');
       }
-      if (filtersPanel) filtersPanel.style.display = 'none';
+      filtersPanel?.classList.add('hidden');
       map.off('moveend', updateDVFLayer);
     }
   });
@@ -39,7 +42,7 @@ export function initDVFLayer() {
   const applyBtn = document.getElementById('apply-filters');
   if (applyBtn) {
     applyBtn.addEventListener('click', () => {
-      logger.info('Appliquer button clicked — updating DVF layer');
+      logger.info('Apply button clicked — updating DVF layer');
       updateDVFLayer();
     });
   }
@@ -124,9 +127,6 @@ async function updateDVFLayer() {
         fillOpacity: 0.7
       });
 
-      const formattedPrice = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(price);
-      const prixM2Text = prixM2 ? new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(prixM2) : '-';
-
       marker.on('click', async () => {
         try {
           const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?bbox=${lon - 0.0002},${lat - 0.0002},${lon + 0.0002},${lat + 0.0002}`);
@@ -134,9 +134,7 @@ async function updateDVFLayer() {
 
           const clickedSale = grouped.find(g => Math.abs(g.latitude - lat) < 0.0001 && Math.abs(g.longitude - lon) < 0.0001);
 
-          const panel = document.getElementById('property-panel');
-          panel.innerHTML = renderPropertyPanel(clickedSale);
-          panel.classList.remove('hidden');
+          openPropertyPanel(clickedSale);
         } catch (err) {
           console.error('Erreur chargement mutations DVF:', err);
         }
@@ -150,6 +148,18 @@ async function updateDVFLayer() {
   } catch (err) {
     logger.error('Failed to load DVF API data:', err);
   }
+}
+
+function openPropertyPanel(data) {
+  const panel = document.getElementById('property-panel');
+  if (!panel) return;
+
+  panel.innerHTML = renderPropertyPanel(data);
+  panel.classList.add('active');
+
+  document.getElementById('close-panel')?.addEventListener('click', () => {
+    panel.classList.remove('active');
+  });
 }
 
 function renderPropertyPanel(data) {
@@ -174,9 +184,3 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
-
-document.body.addEventListener('click', e => {
-  if (e.target.id === 'close-panel') {
-    document.getElementById('property-panel')?.classList.add('hidden');
-  }
-});
