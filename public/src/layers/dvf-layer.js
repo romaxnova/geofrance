@@ -19,7 +19,7 @@ export function initDVFLayer() {
   // Toggle the filters panel drawer
   if (toggleBtn) {
     toggleBtn.addEventListener('click', () => {
-      filtersPanel?.classList.toggle('hidden');
+      filtersPanel?.classList.toggle('active');
     });
   }
 
