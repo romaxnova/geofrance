@@ -171,60 +171,72 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
-  // Separate lots by surface availability
-  const withSurface = data.lots.filter(l => l.Surface !== null && l.Surface !== undefined);
-  const withoutSurface = data.lots.filter(l => l.Surface === null || l.Surface === undefined);
+  const uniqueLots = [];
 
-  const types = data.lots.map(l => l.type_local).filter(Boolean);
-  const uniqueTypes = [...new Set(types.map(t => t.toLowerCase()))];
-
-  // 🧠 Refined condition for 1 property with multiple Carrez lots
-  const isOnePropertyWithLots =
-    withSurface.length === 1 &&
-    withoutSurface.length > 0 &&
-    uniqueTypes.length === 1 &&
-    withoutSurface.every(l => l.Carrez !== null || l.Carrez !== undefined);
-
-  let lotsHtml = '';
-
-  if (isOnePropertyWithLots) {
-    const lot = withSurface[0];
+  // 🔍 Step 1: Group unique logical lots by key (type + surface + pieces)
+  const seen = new Set();
+  data.lots.forEach((lot) => {
     const type = lot.type_local || 'Bien';
-    const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
-    const pieces = lot.nombre_pieces_principales ?? '?';
+    const surface = lot.Surface ?? null;
+    const pieces = lot.nombre_pieces_principales ?? null;
+    const key = `${type}|${surface}|${pieces}`;
 
-    lotsHtml += `
-      <div class="lot-row" style="border-left: 4px solid #0d46a8; padding-left: 0.8rem; margin-bottom: 0.6rem;">
-        <div><strong>${type}</strong></div>
-        <div><i data-lucide="ruler"></i> ${surface}</div>
-        <div><i data-lucide="bed"></i> ${pieces} pièce${pieces === 1 ? '' : 's'}</div>
-      </div>
-    `;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueLots.push({ type, surface, pieces });
+    }
+  });
 
-    withoutSurface.forEach((lot, i) => {
-      const carrez = lot.Carrez ? `${lot.Carrez} m²` : 'n/a';
-      lotsHtml += `
-        <div class="lot-row" style="font-size: 0.85rem; color: #555;">
-          <div><i data-lucide="lamp-ceiling"></i> Lot ${i + 1}</div>
-          <div><i data-lucide="ruler"></i> Carrez: ${carrez}</div>
-          <div></div>
-        </div>`;
-    });
-  } else {
-    // Render each lot independently
-    lotsHtml += data.lots.map((lot, i) => {
-      const type = lot.type_local || 'Bien';
-      const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
-      const pieces = lot.nombre_pieces_principales ?? '?';
+  // 🔍 Step 2: If only one row (1 mutation, 1 line), check if it contains multiple lotN_surface_carrez
+  let sublotsHTML = '';
+  if (data.lots.length === 1) {
+    const lot = data.lots[0];
+    const carrezLots = [];
+
+    for (let i = 1; i <= 5; i++) {
+      const carrez = lot[`lot${i}_surface_carrez`];
+      if (carrez) {
+        carrezLots.push({
+          index: i,
+          surface: parseFloat(carrez)
+        });
+      }
+    }
+
+    if (carrezLots.length > 0) {
+      sublotsHTML = carrezLots
+        .map(
+          (l) => `
+          <div class="lot-row" style="font-size: 0.85rem; color: #555;">
+            <div>🔹 Lot ${l.index}</div>
+            <div>📐 Carrez: ${l.surface} m²</div>
+            <div></div>
+          </div>
+        `
+        )
+        .join('');
+    }
+  }
+
+  // 🧱 Render lots
+  const lotsHTML = uniqueLots
+    .map((lot) => {
+      const type = lot.type;
+      const surface = lot.surface ? `${lot.surface} m²` : 'n/a';
+      const pieces =
+        lot.pieces != null
+          ? `${lot.pieces} ${lot.pieces === 1 ? 'pièce' : 'pièces'}`
+          : '? pièces';
+
       return `
-        <div class="lot-row" style="border-left: 4px solid #ddd; padding-left: 0.8rem; margin-bottom: 0.4rem;">
-          <div><strong>${type}</strong></div>
-          <div><i data-lucide="ruler"></i> ${surface}</div>
-          <div><i data-lucide="bed"></i> ${pieces} pièce${pieces === 1 ? '' : 's'}</div>
+        <div class="lot-row">
+          <strong>${type}</strong>
+          <span>${surface}</span>
+          <span>${pieces}</span>
         </div>
       `;
-    }).join('');
-  }
+    })
+    .join('');
 
   return `
     <div class="panel-header">
@@ -234,10 +246,9 @@ function renderPropertyPanel(data) {
     <div class="mutations-container">
       <div class="mutation-block">
         <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-        ${lotsHtml}
+        ${lotsHTML}
+        ${sublotsHTML}
       </div>
     </div>
   `;
 }
-
-
