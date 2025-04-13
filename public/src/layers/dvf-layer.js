@@ -171,14 +171,18 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
+  // Smarter heuristic to detect single-row sale with multiple Carrez lots
+  const surfaces = data.lots.map(l => l.Surface).filter(v => v !== null && v !== undefined);
+  const types = [...new Set(data.lots.map(l => l.type_local).filter(Boolean).map(t => t.toLowerCase()))];
+
   const isSingleRowWithMultipleLots =
-    data.lots.length > 1 &&
-    data.lots.every(l => l.Surface && l.Surface === data.lots[0].Surface);
+    surfaces.length > 0 &&
+    surfaces.every(s => s === surfaces[0]) &&
+    types.length === 1;
 
   let lotsHtml = '';
 
   if (isSingleRowWithMultipleLots) {
-    // 🔹 1 sale, 1 row, multiple Carrez lots
     const lot = data.lots[0];
     const type = lot.type_local || 'Bien';
     const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
@@ -202,11 +206,11 @@ function renderPropertyPanel(data) {
         </div>`;
     });
   } else {
-    // 🔹 1 sale, multiple rows — each is its own unit
-    lotsHtml += data.lots.map(lot => {
+    lotsHtml += data.lots.map((lot, i) => {
       const type = lot.type_local || 'Bien';
       const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
       const pieces = lot.nombre_pieces_principales ?? '?';
+
       return `
         <div class="lot-row" style="border-left: 4px solid #ddd; padding-left: 0.8rem; margin-bottom: 0.4rem;">
           <div><strong>${type}</strong></div>
@@ -230,5 +234,3 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
-
-
