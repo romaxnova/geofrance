@@ -161,7 +161,7 @@ function openPropertyPanel(data) {
 }
 
 function renderPropertyPanel(data) {
-  if (!data || !data.lots || data.lots.length === 0) {
+  if (!data || !Array.isArray(data.lots) || data.lots.length === 0) {
     return '<p>Aucune donnée disponible à cette adresse.</p>';
   }
 
@@ -171,72 +171,54 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
+  // Remove empty or fake lots
+  const cleanedLots = data.lots.filter(lot =>
+    lot.type_local || lot.Surface || lot.Carrez || lot.nombre_pieces_principales
+  );
+
+  // Group by unique units: use JSON stringify to compare
+  const seen = new Set();
   const uniqueLots = [];
 
-  // 🔍 Step 1: Group unique logical lots by key (type + surface + pieces)
-  const seen = new Set();
-  data.lots.forEach((lot) => {
-    const type = lot.type_local || 'Bien';
-    const surface = lot.Surface ?? null;
-    const pieces = lot.nombre_pieces_principales ?? null;
-    const key = `${type}|${surface}|${pieces}`;
+  cleanedLots.forEach(lot => {
+    const key = JSON.stringify({
+      type: lot.type_local,
+      surface: lot.Surface,
+      pieces: lot.nombre_pieces_principales
+    });
 
     if (!seen.has(key)) {
       seen.add(key);
-      uniqueLots.push({ type, surface, pieces });
+      uniqueLots.push(lot);
     }
   });
 
-  // 🔍 Step 2: If only one row (1 mutation, 1 line), check if it contains multiple lotN_surface_carrez
-  let sublotsHTML = '';
-  if (data.lots.length === 1) {
-    const lot = data.lots[0];
-    const carrezLots = [];
+  // Carrez lots (optional) if only one row had surface + carrez
+  const carrezLots = cleanedLots.length === 1
+    ? [1, 2, 3, 4, 5].map(i => data.lots[0][`lot${i}_surface_carrez`]).filter(Boolean)
+    : [];
 
-    for (let i = 1; i <= 5; i++) {
-      const carrez = lot[`lot${i}_surface_carrez`];
-      if (carrez) {
-        carrezLots.push({
-          index: i,
-          surface: parseFloat(carrez)
-        });
-      }
-    }
+  const lotRowsHTML = uniqueLots.map(lot => {
+    const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+    const pieces = lot.nombre_pieces_principales ?? '?';
+    const type = lot.type_local || 'Bien';
 
-    if (carrezLots.length > 0) {
-      sublotsHTML = carrezLots
-        .map(
-          (l) => `
-          <div class="lot-row" style="font-size: 0.85rem; color: #555;">
-            <div>🔹 Lot ${l.index}</div>
-            <div>📐 Carrez: ${l.surface} m²</div>
-            <div></div>
-          </div>
-        `
-        )
-        .join('');
-    }
-  }
+    return `
+      <div class="lot-row">
+        <div><strong>${type}</strong></div>
+        <div>${surface}</div>
+        <div>${pieces} pièce${pieces > 1 ? 's' : ''}</div>
+      </div>`;
+  }).join('');
 
-  // 🧱 Render lots
-  const lotsHTML = uniqueLots
-    .map((lot) => {
-      const type = lot.type;
-      const surface = lot.surface ? `${lot.surface} m²` : 'n/a';
-      const pieces =
-        lot.pieces != null
-          ? `${lot.pieces} ${lot.pieces === 1 ? 'pièce' : 'pièces'}`
-          : '? pièces';
-
-      return `
-        <div class="lot-row">
-          <strong>${type}</strong>
-          <span>${surface}</span>
-          <span>${pieces}</span>
-        </div>
-      `;
-    })
-    .join('');
+  const carrezRowsHTML = carrezLots.length > 0
+    ? carrezLots.map((m2, i) => `
+      <div class="lot-row" style="font-size: 0.85rem; color: #555;">
+        <div>🔹 Lot ${i + 1}</div>
+        <div>Carrez: ${m2} m²</div>
+        <div></div>
+      </div>`).join('')
+    : '';
 
   return `
     <div class="panel-header">
@@ -246,9 +228,10 @@ function renderPropertyPanel(data) {
     <div class="mutations-container">
       <div class="mutation-block">
         <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-        ${lotsHTML}
-        ${sublotsHTML}
+        ${lotRowsHTML}
+        ${carrezRowsHTML}
       </div>
     </div>
   `;
 }
+
