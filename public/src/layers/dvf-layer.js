@@ -26,7 +26,6 @@ export function initDVFLayer() {
   checkbox.addEventListener('change', async (e) => {
     if (e.target.checked) {
       map.on('moveend', updateDVFLayer);
-      filtersPanel?.classList.remove('hidden');
       await updateDVFLayer();
     } else {
       if (dvfLayer) {
@@ -34,7 +33,6 @@ export function initDVFLayer() {
         dvfLayer = null;
         logger.info('DVF layer removed');
       }
-      filtersPanel?.classList.add('hidden');
       map.off('moveend', updateDVFLayer);
     }
   });
@@ -113,11 +111,6 @@ async function updateDVFLayer() {
       const lon = parseFloat(entry.longitude);
       if (!lat || !lon) return;
 
-      const price = parseFloat(entry.valeur_fonciere);
-      const surface = parseFloat(entry.surface_reelle_bati);
-      const date = new Date(entry.date_mutation).toLocaleDateString('fr-FR');
-      const prixM2 = surface > 0 ? (price / surface) : null;
-
       const marker = L.circleMarker([lat, lon], {
         radius: 6,
         fillColor: '#1976D2',
@@ -160,6 +153,11 @@ function openPropertyPanel(data) {
   document.getElementById('close-panel')?.addEventListener('click', () => {
     panel.classList.remove('active');
   });
+
+  // Activate Lucide icons after dynamic injection
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function renderPropertyPanel(data) {
@@ -173,6 +171,20 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
+  const firstLot = data.lots.find(l => l.Surface);
+  const surface = firstLot?.Surface ? `${firstLot.Surface} m²` : 'n/a';
+  const type = firstLot?.type_local || 'Bien';
+  const pieces = firstLot?.nombre_pieces_principales ?? '?';
+
+  const icon = (label) => {
+    switch (label.toLowerCase()) {
+      case 'maison': return '<i data-lucide="house"></i>';
+      case 'appartement': return '<i data-lucide="building"></i>';
+      case 'local': return '<i data-lucide="warehouse"></i>';
+      default: return '<i data-lucide="building-2"></i>';
+    }
+  };
+
   return `
     <div class="panel-header">
       <h2>${data.adresse || 'Adresse inconnue'}</h2>
@@ -181,20 +193,24 @@ function renderPropertyPanel(data) {
     <div class="mutations-container">
       <div class="mutation-block">
         <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-        ${data.lots.map((lot, index) => {
-          const surface = lot.Surface ? `${lot.Surface} m²` : '';
-          const carrez = lot.Carrez ? ` (Carrez: ${lot.Carrez} m²)` : '';
-          const type = lot.type_local || 'Bien';
-          const pieces = lot.nombre_pieces_principales ?? '?';
 
-          return `
-            <div class="lot-row">
-              <div><strong>${type}</strong></div>
-              <div>${surface}${carrez}</div>
-              <div>${pieces} pièces</div>
-            </div>
-          `;
-        }).join('')}
+        <div class="lot-row" style="border-left: 4px solid #0d46a8; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+          <div><strong>${icon(type)} ${type}</strong></div>
+          <div><i data-lucide="ruler"></i> ${surface}</div>
+          <div><i data-lucide="bed"></i> ${pieces === '?' ? '-' : pieces}</div>
+        </div>
+
+        ${data.lots
+          .map((lot, i) => {
+            const carrez = lot.Carrez ? `${lot.Carrez} m²` : 'n/a';
+            return `
+              <div class="lot-row" style="font-size: 0.85rem; color: #555;">
+                <div><i data-lucide="lamp-ceiling"></i> Lot ${i + 1}</div>
+                <div><i data-lucide="ruler"></i> Carrez: ${carrez}</div>
+                <div></div>
+              </div>`;
+          })
+          .join('')}
       </div>
     </div>
   `;
