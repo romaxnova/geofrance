@@ -171,20 +171,51 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
-  const lotsHtml = data.lots.map((lot, i) => {
+  const isSingleRowWithMultipleLots =
+    data.lots.length > 1 &&
+    data.lots.every(l => l.Surface && l.Surface === data.lots[0].Surface);
+
+  let lotsHtml = '';
+
+  if (isSingleRowWithMultipleLots) {
+    // 🔹 1 sale, 1 row, multiple Carrez lots
+    const lot = data.lots[0];
     const type = lot.type_local || 'Bien';
-    const surface = lot.Surface ? `${lot.Surface} m²` : '';
-    const carrez = lot.Carrez ? ` (Carrez: ${lot.Carrez} m²)` : '';
+    const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
     const pieces = lot.nombre_pieces_principales ?? '?';
 
-    return `
-      <div class="lot-row" style="border-left: 4px solid #eee; padding-left: 0.8rem;">
+    lotsHtml += `
+      <div class="lot-row" style="border-left: 4px solid #0d46a8; padding-left: 0.8rem; margin-bottom: 0.6rem;">
         <div><strong>${type}</strong></div>
-        <div><i data-lucide="ruler"></i> ${surface}${carrez}</div>
+        <div><i data-lucide="ruler"></i> ${surface}</div>
         <div><i data-lucide="bed"></i> ${pieces} pièce${pieces === 1 ? '' : 's'}</div>
       </div>
     `;
-  }).join('');
+
+    data.lots.forEach((lot, i) => {
+      const carrez = lot.Carrez ? `${lot.Carrez} m²` : 'n/a';
+      lotsHtml += `
+        <div class="lot-row" style="font-size: 0.85rem; color: #555;">
+          <div><i data-lucide="lamp-ceiling"></i> Lot ${i + 1}</div>
+          <div><i data-lucide="ruler"></i> Carrez: ${carrez}</div>
+          <div></div>
+        </div>`;
+    });
+  } else {
+    // 🔹 1 sale, multiple rows — each is its own unit
+    lotsHtml += data.lots.map(lot => {
+      const type = lot.type_local || 'Bien';
+      const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+      const pieces = lot.nombre_pieces_principales ?? '?';
+      return `
+        <div class="lot-row" style="border-left: 4px solid #ddd; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+          <div><strong>${type}</strong></div>
+          <div><i data-lucide="ruler"></i> ${surface}</div>
+          <div><i data-lucide="bed"></i> ${pieces} pièce${pieces === 1 ? '' : 's'}</div>
+        </div>
+      `;
+    }).join('');
+  }
 
   return `
     <div class="panel-header">
@@ -199,4 +230,5 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
+
 
