@@ -171,6 +171,38 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
+  // Deduplicate lots by type/surface/pieces/carrez
+  const seen = new Set();
+  const uniqueLots = [];
+  data.lots.forEach(lot => {
+    const key = [
+      lot.type_local?.toLowerCase().trim() || '',
+      lot.Surface || '',
+      lot.nombre_pieces_principales || '',
+      lot.Carrez || ''
+    ].join('|');
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueLots.push(lot);
+    }
+  });
+
+  const lotsHTML = uniqueLots.map((lot) => {
+    const type = lot.type_local || 'Type inconnu';
+    const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+    const carrez = lot.Carrez ? `Carrez: ${lot.Carrez} m²` : '';
+    const pieces = lot.nombre_pieces_principales ?? '?';
+
+    return `
+      <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+        <div><strong>${type}</strong></div>
+        <div>${surface}${carrez ? ` <span style="color:#999;font-size:0.85em">(${carrez})</span>` : ''}</div>
+        <div>${pieces === '?' || pieces == 0 ? '? pièces' : `${pieces} pièce${pieces > 1 ? 's' : ''}`}</div>
+      </div>
+    `;
+  }).join('');
+
   return `
     <div class="panel-header">
       <h2>${data.adresse || 'Adresse inconnue'}</h2>
@@ -179,24 +211,11 @@ function renderPropertyPanel(data) {
     <div class="mutations-container">
       <div class="mutation-block">
         <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-
-        ${data.lots.map((lot, index) => {
-          const type = lot.type_local || 'Type inconnu';
-          const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
-          const carrez = lot.Carrez ? `Carrez: ${lot.Carrez} m²` : '';
-          const pieces = lot.nombre_pieces_principales ?? '?';
-          
-          return `
-            <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem;">
-              <div><strong>${type}</strong></div>
-              <div>${surface}${carrez ? ` (${carrez})` : ''}</div>
-              <div>${pieces} ${pieces === '?' ? 'pièces' : (pieces == 1 ? 'pièce' : 'pièces')}</div>
-            </div>
-          `;
-        }).join('')}
+        ${lotsHTML}
       </div>
     </div>
   `;
 }
+
 
 
