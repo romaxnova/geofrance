@@ -171,24 +171,24 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
-  // 👇 Prepare insight into data
-  const surfaceCount = data.lots.filter(l => l.Surface !== null && l.Surface !== undefined).length;
-  const uniqueTypes = [...new Set(data.lots.map(l => l.type_local?.toLowerCase()).filter(Boolean))];
+  // Separate lots by surface availability
+  const withSurface = data.lots.filter(l => l.Surface !== null && l.Surface !== undefined);
+  const withoutSurface = data.lots.filter(l => l.Surface === null || l.Surface === undefined);
 
-  const allCarrezPresent = data.lots.every(l => l.Carrez !== null && l.Carrez !== undefined);
-  const allSurfacesSame = surfaceCount > 0 && data.lots.every(l => l.Surface === data.lots[0].Surface);
+  const types = data.lots.map(l => l.type_local).filter(Boolean);
+  const uniqueTypes = [...new Set(types.map(t => t.toLowerCase()))];
 
-  // 🧠 Use very strict check: only 1 surface + 1 type + Carrez present = treat as 1 unit with lots
-  const isOneRowWithLots =
-    surfaceCount === 1 &&
+  // 🧠 Refined condition for 1 property with multiple Carrez lots
+  const isOnePropertyWithLots =
+    withSurface.length === 1 &&
+    withoutSurface.length > 0 &&
     uniqueTypes.length === 1 &&
-    allCarrezPresent;
+    withoutSurface.every(l => l.Carrez !== null || l.Carrez !== undefined);
 
   let lotsHtml = '';
 
-  if (isOneRowWithLots) {
-    // 🔹 Single-row property with multiple Carrez lots
-    const lot = data.lots[0];
+  if (isOnePropertyWithLots) {
+    const lot = withSurface[0];
     const type = lot.type_local || 'Bien';
     const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
     const pieces = lot.nombre_pieces_principales ?? '?';
@@ -201,7 +201,7 @@ function renderPropertyPanel(data) {
       </div>
     `;
 
-    data.lots.forEach((lot, i) => {
+    withoutSurface.forEach((lot, i) => {
       const carrez = lot.Carrez ? `${lot.Carrez} m²` : 'n/a';
       lotsHtml += `
         <div class="lot-row" style="font-size: 0.85rem; color: #555;">
@@ -211,7 +211,7 @@ function renderPropertyPanel(data) {
         </div>`;
     });
   } else {
-    // 🔹 Multiple independent rows
+    // Render each lot independently
     lotsHtml += data.lots.map((lot, i) => {
       const type = lot.type_local || 'Bien';
       const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
@@ -239,4 +239,5 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
+
 
