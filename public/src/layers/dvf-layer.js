@@ -171,18 +171,23 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
-  // Smarter heuristic to detect single-row sale with multiple Carrez lots
-  const surfaces = data.lots.map(l => l.Surface).filter(v => v !== null && v !== undefined);
-  const types = [...new Set(data.lots.map(l => l.type_local).filter(Boolean).map(t => t.toLowerCase()))];
+  // 👇 Prepare insight into data
+  const surfaceCount = data.lots.filter(l => l.Surface !== null && l.Surface !== undefined).length;
+  const uniqueTypes = [...new Set(data.lots.map(l => l.type_local?.toLowerCase()).filter(Boolean))];
 
-  const isSingleRowWithMultipleLots =
-    surfaces.length > 0 &&
-    surfaces.every(s => s === surfaces[0]) &&
-    types.length === 1;
+  const allCarrezPresent = data.lots.every(l => l.Carrez !== null && l.Carrez !== undefined);
+  const allSurfacesSame = surfaceCount > 0 && data.lots.every(l => l.Surface === data.lots[0].Surface);
+
+  // 🧠 Use very strict check: only 1 surface + 1 type + Carrez present = treat as 1 unit with lots
+  const isOneRowWithLots =
+    surfaceCount === 1 &&
+    uniqueTypes.length === 1 &&
+    allCarrezPresent;
 
   let lotsHtml = '';
 
-  if (isSingleRowWithMultipleLots) {
+  if (isOneRowWithLots) {
+    // 🔹 Single-row property with multiple Carrez lots
     const lot = data.lots[0];
     const type = lot.type_local || 'Bien';
     const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
@@ -206,11 +211,11 @@ function renderPropertyPanel(data) {
         </div>`;
     });
   } else {
+    // 🔹 Multiple independent rows
     lotsHtml += data.lots.map((lot, i) => {
       const type = lot.type_local || 'Bien';
       const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
       const pieces = lot.nombre_pieces_principales ?? '?';
-
       return `
         <div class="lot-row" style="border-left: 4px solid #ddd; padding-left: 0.8rem; margin-bottom: 0.4rem;">
           <div><strong>${type}</strong></div>
@@ -234,3 +239,4 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
+
