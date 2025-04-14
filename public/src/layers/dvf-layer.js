@@ -171,22 +171,34 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
-  const fullLots = data.lots.filter(lot => lot.Surface || lot.type_local || lot.nombre_pieces_principales);
-  const carrezLots = data.lots.filter(lot => !lot.Surface && lot.Carrez);
+  // Group by type + surface + pieces to avoid duplicates
+  const summarizedLots = [];
+  const lotMap = new Set();
 
-  // Create a set to prevent duplicate fullLots (based on all properties)
-  const uniqueFullLots = [];
-  const seenKeys = new Set();
-
-  for (const lot of fullLots) {
-    const key = `${lot.type_local}-${lot.Surface}-${lot.nombre_pieces_principales}`;
-    if (!seenKeys.has(key)) {
-      seenKeys.add(key);
-      uniqueFullLots.push(lot);
+  data.lots.forEach(lot => {
+    const key = `${lot.type_local}-${lot.Surface || 'n/a'}-${lot.nombre_pieces_principales || '?'}`;
+    if (!lotMap.has(key)) {
+      lotMap.add(key);
+      summarizedLots.push(lot);
     }
-  }
+  });
 
-  let html = `
+  // Gather all unique Carrez values
+  const carrezLots = [];
+  const seenCarrez = new Set();
+
+  data.lots.forEach(lot => {
+    const values = [lot.Carrez].filter(x => x !== null && !isNaN(x));
+    values.forEach(val => {
+      const rounded = Math.round(val * 100) / 100;
+      if (!seenCarrez.has(rounded)) {
+        seenCarrez.add(rounded);
+        carrezLots.push(rounded);
+      }
+    });
+  });
+
+  return `
     <div class="panel-header">
       <h2>${data.adresse || 'Adresse inconnue'}</h2>
       <button id="close-panel">&times;</button>
@@ -194,41 +206,33 @@ function renderPropertyPanel(data) {
     <div class="mutations-container">
       <div class="mutation-block">
         <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-  `;
 
-  // Display each unique "local" row (appartement, dépendance, etc.)
-  for (const lot of uniqueFullLots) {
-    const type = lot.type_local || 'Bien';
-    const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
-    const pieces = lot.nombre_pieces_principales ?? '?';
+        ${summarizedLots
+          .map(lot => {
+            const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+            const pieces = lot.nombre_pieces_principales ?? '?';
+            return `
+              <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+                <div><strong>${lot.type_local}</strong></div>
+                <div>📐 ${surface}</div>
+                <div>🛏️ ${pieces} ${pieces === '?' || pieces === 1 ? 'pièce' : 'pièces'}</div>
+              </div>
+            `;
+          })
+          .join('')}
 
-    html += `
-      <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
-        <div><strong>${type}</strong></div>
-        <div>📐 ${surface}</div>
-        <div>🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}</div>
-      </div>
-    `;
-  }
-
-  // Display additional Carrez-only lots if any
-  if (carrezLots.length > 0) {
-    html += `<div style="border-left: 4px solid #1976D2; margin-top: 1rem; padding-left: 0.8rem;">`;
-    html += `<strong style="color:#1976D2">Lots Carrez complémentaires</strong><br>`;
-    carrezLots.forEach((lot, i) => {
-      const carrez = lot.Carrez ? `${lot.Carrez} m²` : 'n/a';
-      html += `
-        <div class="lot-row" style="font-size: 0.85rem; color: #555;">
-          🔹 Lot ${i + 1} — Carrez: ${carrez}
-        </div>`;
-    });
-    html += `</div>`;
-  }
-
-  html += `
+        ${
+          carrezLots.length > 0
+            ? `<h4 style="color:#0d46a8; margin-top:1rem;">Lots Carrez complémentaires</h4>
+              ${carrezLots
+                .map(
+                  (c, i) =>
+                    `<div class="lot-row" style="font-size: 0.9rem; color: #333;"><span style="color: #1976d2;">🔹 Lot ${i + 1}</span> — Carrez: ${c} m²</div>`
+                )
+                .join('')}`
+            : ''
+        }
       </div>
     </div>
   `;
-
-  return html;
 }
