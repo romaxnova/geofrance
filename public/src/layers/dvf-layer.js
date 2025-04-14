@@ -171,32 +171,27 @@ function renderPropertyPanel(data) {
     currency: 'EUR'
   }).format(data.valeur_fonciere);
 
-  // Group by type + surface + pieces to avoid duplicates
-  const summarizedLots = [];
-  const lotMap = new Set();
-
-  data.lots.forEach(lot => {
-    const key = `${lot.type_local}-${lot.Surface || 'n/a'}-${lot.nombre_pieces_principales || '?'}`;
-    if (!lotMap.has(key)) {
-      lotMap.add(key);
-      summarizedLots.push(lot);
-    }
+  // Deduplicate lots based on surface/type/rooms combo
+  const seen = new Set();
+  const filteredLots = data.lots.filter(lot => {
+    const key = `${lot.type_local}|${lot.Surface}|${lot.nombre_pieces_principales}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 
-  // Gather all unique Carrez values
-  const carrezLots = [];
-  const seenCarrez = new Set();
-
-  data.lots.forEach(lot => {
-    const values = [lot.Carrez].filter(x => x !== null && !isNaN(x));
-    values.forEach(val => {
-      const rounded = Math.round(val * 100) / 100;
-      if (!seenCarrez.has(rounded)) {
-        seenCarrez.add(rounded);
-        carrezLots.push(rounded);
-      }
-    });
-  });
+  const lotRows = filteredLots.map(lot => {
+    const type = lot.type_local || 'Bien';
+    const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+    const pieces = lot.nombre_pieces_principales ?? '?';
+    return `
+      <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+        <div><strong>${type}</strong></div>
+        <div>📐 ${surface}</div>
+        <div>🛏️ ${pieces === '?' ? '-' : pieces} ${pieces === '?' ? '' : 'pièce' + (pieces > 1 ? 's' : '')}</div>
+      </div>
+    `;
+  }).join('');
 
   return `
     <div class="panel-header">
@@ -206,33 +201,9 @@ function renderPropertyPanel(data) {
     <div class="mutations-container">
       <div class="mutation-block">
         <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-
-        ${summarizedLots
-          .map(lot => {
-            const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
-            const pieces = lot.nombre_pieces_principales ?? '?';
-            return `
-              <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
-                <div><strong>${lot.type_local}</strong></div>
-                <div>📐 ${surface}</div>
-                <div>🛏️ ${pieces} ${pieces === '?' || pieces === 1 ? 'pièce' : 'pièces'}</div>
-              </div>
-            `;
-          })
-          .join('')}
-
-        ${
-          carrezLots.length > 0
-            ? `<h4 style="color:#0d46a8; margin-top:1rem;">Lots Carrez complémentaires</h4>
-              ${carrezLots
-                .map(
-                  (c, i) =>
-                    `<div class="lot-row" style="font-size: 0.9rem; color: #333;"><span style="color: #1976d2;">🔹 Lot ${i + 1}</span> — Carrez: ${c} m²</div>`
-                )
-                .join('')}`
-            : ''
-        }
+        ${lotRows}
       </div>
     </div>
   `;
 }
+
