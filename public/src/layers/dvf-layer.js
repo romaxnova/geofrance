@@ -214,38 +214,39 @@ export function renderGroupedPanel(address, grouped) {
         currency: 'EUR'
       }).format(mutation.valeur_fonciere);
 
+      const allLots = entries.flatMap(e => e.lots || []);
+
+      // Deduplicate based on surface/type/rooms
       const seen = new Set();
-      const lots = entries
-        .filter(entry => {
-          const key = `${entry.type_local}|${entry.surface_reelle_bati}|${entry.nombre_pieces_principales}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        })
-        .map(entry => {
-          console.log('🔍 Entry:', entry);
+      const filteredLots = allLots.filter(lot => {
+        const key = `${lot.type_local}|${lot.Surface}|${lot.nombre_pieces_principales}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
-          const type = entry.type_local ?? 'Type inconnu';
-          const surface = entry.surface_reelle_bati ? `${entry.surface_reelle_bati} m²` : 'n/a';
+      const lotRows = filteredLots.map(lot => {
+        const type = lot.type_local ?? 'Type inconnu';
+        const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
 
-          const showCarrez = entry.type_local === 'Appartement' && entry.lot1_surface_carrez;
-          const carrez = showCarrez ? ` (Carrez: ${entry.lot1_surface_carrez} m²)` : '';
+        const showCarrez = lot.type_local === 'Appartement' && lot.Carrez;
+        const carrez = showCarrez ? ` (Carrez: ${lot.Carrez} m²)` : '';
 
-          const pieces = entry.nombre_pieces_principales ?? '?';
+        const pieces = lot.nombre_pieces_principales ?? '?';
 
-          return `
-            <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
-              <div><strong>${type}</strong></div>
-              <div>📐 ${surface}${carrez}</div>
-              <div>🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}</div>
-            </div>
-          `;
-        }).join('');
+        return `
+          <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+            <div><strong>${type}</strong></div>
+            <div>📐 ${surface}${carrez}</div>
+            <div>🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}</div>
+          </div>
+        `;
+      }).join('');
 
       return `
         <div class="mutation-block">
           <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-          ${lots}
+          ${lotRows}
         </div>
       `;
     }).join('');
