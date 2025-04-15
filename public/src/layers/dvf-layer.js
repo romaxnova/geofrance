@@ -58,12 +58,7 @@ async function updateDVFLayer() {
     bounds.getNorthEast().lat.toFixed(5)
   ].join(',');
 
-  let sampleLimit = 1000;
-  if (zoom < 8) sampleLimit = 100;
-  else if (zoom < 11) sampleLimit = 300;
-  else if (zoom < 13) sampleLimit = 600;
-
-  const params = new URLSearchParams({ bbox, limit: sampleLimit });
+  const params = new URLSearchParams({ bbox });
 
   const yearMin = document.getElementById('year-min')?.value;
   const yearMax = document.getElementById('year-max')?.value;
@@ -82,36 +77,35 @@ async function updateDVFLayer() {
   logger.info('Fetching DVF data for bounds and filters:', params.toString());
 
   try {
-    const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf?${params.toString()}`);
-    const data = await res.json();
+    const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?${params.toString()}`);
+    const sales = await res.json();
 
-    if (!data || data.length === 0) {
-      logger.warn('No DVF data received');
+    if (!sales || sales.length === 0) {
+      logger.warn('No DVF grouped data received');
       return;
     }
-
-    const seen = new Set();
-    const unique = [];
-    data.forEach(entry => {
-      const key = `${entry.latitude}-${entry.longitude}-${entry.valeur_fonciere}-${entry.date_mutation}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(entry);
-      }
-    });
 
     if (dvfLayer) {
       dvfLayer.clearLayers();
     } else {
-      dvfLayer = L.markerClusterGroup();
+      dvfLayer = L.layerGroup();
     }
 
-    unique.forEach(entry => {
-      const lat = parseFloat(entry.latitude);
-      const lon = parseFloat(entry.longitude);
-      if (!lat || !lon) return;
+    // Group sales by address string
+    const addressMap = new Map();
+    sales.forEach(sale => {
+      const key = sale.adresse || `${sale.latitude},${sale.longitude}`;
+      if (!addressMap.has(key)) {
+        addressMap.set(key, []);
+      }
+      addressMap.get(key).push(sale);
+    });
 
-      const marker = L.circleMarker([lat, lon], {
+    for (const [address, entries] of addressMap.entries()) {
+      const { latitude, longitude } = entries[0];
+      if (!latitude || !longitude) continue;
+
+      const marker = L.circleMarker([latitude, longitude], {
         radius: 6,
         fillColor: '#1976D2',
         color: '#0D47A1',
@@ -120,45 +114,80 @@ async function updateDVFLayer() {
         fillOpacity: 0.7
       });
 
-      marker.on('click', async () => {
-        try {
-          const res = await fetch(`https://dvf-api-production.up.railway.app/api/dvf/grouped?bbox=${lon - 0.0002},${lat - 0.0002},${lon + 0.0002},${lat + 0.0002}`);
-          const grouped = await res.json();
-
-          const clickedSale = grouped.find(g => Math.abs(g.latitude - lat) < 0.0001 && Math.abs(g.longitude - lon) < 0.0001);
-
-          openPropertyPanel(clickedSale);
-        } catch (err) {
-          console.error('Erreur chargement mutations DVF:', err);
-        }
+      marker.on('click', () => {
+        openGroupedPanel(address, entries);
       });
 
       dvfLayer.addLayer(marker);
-    });
+    }
 
     dvfLayer.addTo(map);
-    logger.info(`DVF layer updated (${unique.length} unique records)`);
+    logger.info(`DVF layer updated (${addressMap.size} address markers)`);
   } catch (err) {
-    logger.error('Failed to load DVF API data:', err);
+    logger.error('Failed to load DVF grouped data:', err);
   }
 }
 
-function openPropertyPanel(data) {
+function openGroupedPanel(address, salesList) {
   const panel = document.getElementById('property-panel');
   if (!panel) return;
 
-  panel.innerHTML = renderPropertyPanel(data);
+  panel.innerHTML = `
+    <div class="panel-header">
+      <h2>${address}</h2>
+      <button id="close-panel">&times;</button>
+    </div>
+    <div class="mutations-container">
+      ${salesList
+        .map(sale => {
+          const date = new Date(sale.date_mutation).toLocaleDateString('fr-FR');
+          const price = new Intl.NumberFormat('fr-FR', {
+            style: 'currency',
+            currency: 'EUR'
+          }).format(sale.valeur_fonciere);
+
+          // Deduplicate lots
+          const seen = new Set();
+          const uniqueLots = (sale.lots || []).filter(lot => {
+            const key = `${lot.type_local}|${lot.Surface}|${lot.nombre_pieces_principales}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
+          const lotRows = uniqueLots
+            .map(lot => {
+              const type = lot.type_local || 'Bien';
+              const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+              const pieces = lot.nombre_pieces_principales ?? '?';
+              return `
+                <div class="lot-row" style="font-size: 0.9rem;">
+                  <div><strong>${type}</strong></div>
+                  <div>📐 ${surface}</div>
+                  <div>🛏️ ${pieces} pièce${pieces > 1 ? 's' : ''}</div>
+                </div>`;
+            })
+            .join('');
+
+          return `
+            <div class="mutation-block">
+              <h3 style="color:#0d46a8">${date} — ${price}</h3>
+              ${lotRows}
+            </div>`;
+        })
+        .join('')}
+    </div>
+  `;
+
   panel.classList.add('active');
 
   document.getElementById('close-panel')?.addEventListener('click', () => {
     panel.classList.remove('active');
   });
 
-  // Activate Lucide icons after dynamic injection
-  if (window.lucide) {
-    window.lucide.createIcons();
-  }
+  if (window.lucide) window.lucide.createIcons?.();
 }
+
 
 function renderPropertyPanel(data) {
   if (!data || !data.lots || data.lots.length === 0) {
