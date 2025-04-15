@@ -189,58 +189,74 @@ function openGroupedPanel(address, salesList) {
 }
 
 
-function renderPropertyPanel(data) {
-  if (!data || !data.lots || data.lots.length === 0) {
-    console.warn('⚠️ No lots found in data:', data);
-    return '<p>Aucune donnée disponible à cette adresse.</p>';
+export function renderGroupedPanel(address, grouped) {
+  if (!grouped || grouped.length === 0) {
+    return '<p>Aucune mutation disponible à cette adresse.</p>';
   }
 
-  console.log('📦 renderPropertyPanel — received lots:', data.lots);
+  console.log('📦 renderGroupedPanel — entries:', grouped);
 
-  const date = new Date(data.date_mutation).toLocaleDateString('fr-FR');
-  const formattedPrice = new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(data.valeur_fonciere);
-
-  // Deduplicate lots based on surface/type/rooms combo
-  const seen = new Set();
-  const filteredLots = data.lots.filter(lot => {
-    const key = `${lot.type_local}|${lot.Surface}|${lot.nombre_pieces_principales}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+  const groupedByMutation = {};
+  grouped.forEach(entry => {
+    if (!groupedByMutation[entry.id_mutation]) {
+      groupedByMutation[entry.id_mutation] = [];
+    }
+    groupedByMutation[entry.id_mutation].push(entry);
   });
 
-  const lotRows = filteredLots.map(lot => {
-    console.log('🔍 Lot info:', lot);
+  const sections = Object.entries(groupedByMutation)
+    .sort((a, b) => new Date(b[1][0].date_mutation) - new Date(a[1][0].date_mutation))
+    .map(([mutationId, entries]) => {
+      const mutation = entries[0];
+      const date = new Date(mutation.date_mutation).toLocaleDateString('fr-FR');
+      const formattedPrice = new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR'
+      }).format(mutation.valeur_fonciere);
 
-    const type = lot.type_local ?? 'Type inconnu';
-    const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+      const seen = new Set();
+      const lots = entries
+        .filter(entry => {
+          const key = `${entry.type_local}|${entry.surface_reelle_bati}|${entry.nombre_pieces_principales}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .map(entry => {
+          console.log('🔍 Entry:', entry);
 
-    const showCarrez = lot.type_local === 'Appartement' && lot.lot1_surface_carrez;
-    const carrez = showCarrez ? ` (Carrez: ${lot.lot1_surface_carrez} m²)` : '';
+          const type = entry.type_local ?? 'Type inconnu';
+          const surface = entry.surface_reelle_bati ? `${entry.surface_reelle_bati} m²` : 'n/a';
 
-    const pieces = lot.nombre_pieces_principales ?? '?';
-    return `
-      <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
-        <div><strong>${type}</strong></div>
-        <div>📐 ${surface}${carrez}</div>
-        <div>🛏️ ${pieces === '?' ? '-' : pieces} ${pieces === '?' ? '' : 'pièce' + (pieces > 1 ? 's' : '')}</div>
-      </div>
-    `;
-  }).join('');
+          const showCarrez = entry.type_local === 'Appartement' && entry.lot1_surface_carrez;
+          const carrez = showCarrez ? ` (Carrez: ${entry.lot1_surface_carrez} m²)` : '';
+
+          const pieces = entry.nombre_pieces_principales ?? '?';
+
+          return `
+            <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+              <div><strong>${type}</strong></div>
+              <div>📐 ${surface}${carrez}</div>
+              <div>🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}</div>
+            </div>
+          `;
+        }).join('');
+
+      return `
+        <div class="mutation-block">
+          <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
+          ${lots}
+        </div>
+      `;
+    }).join('');
 
   return `
     <div class="panel-header">
-      <h2>${data.adresse || 'Adresse inconnue'}</h2>
+      <h2>${address}</h2>
       <button id="close-panel">&times;</button>
     </div>
     <div class="mutations-container">
-      <div class="mutation-block">
-        <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-        ${lotRows}
-      </div>
+      ${sections}
     </div>
   `;
 }
