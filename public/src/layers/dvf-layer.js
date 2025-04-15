@@ -115,7 +115,12 @@ async function updateDVFLayer() {
       });
 
       marker.on('click', () => {
-        openGroupedPanel(address, entries);
+        const panel = document.getElementById('property-panel');
+        panel.innerHTML = renderGroupedPanel(address, entries);
+        panel.classList.add('active');
+        document.getElementById('close-panel')?.addEventListener('click', () => {
+          panel.classList.remove('active');
+        });
       });
 
       dvfLayer.addLayer(marker);
