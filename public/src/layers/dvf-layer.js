@@ -238,8 +238,14 @@ export function renderGroupedPanel(address, grouped) {
         return `
           <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
             <div><strong>${type}</strong></div>
-            <div>📐 ${surface}${carrez}</div>
-            <div>🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}</div>
+            <div style="display: flex; justify-content: space-between; gap: 1rem;">
+              <div>
+                📐 ${surface}${carrez ? `<br><small style="color: #555;">(Carrez: ${carrez} m²)</small>` : ''}
+              </div>
+              <div>
+                🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}
+              </div>
+            </div>
           </div>
         `;
       }).join('');
