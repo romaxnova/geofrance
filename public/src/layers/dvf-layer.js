@@ -212,7 +212,11 @@ function renderPropertyPanel(data) {
   const lotRows = filteredLots.map(lot => {
     const type = lot.type_local || 'Bien';
     const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
-    const carrez = lot.lot1_surface_carrez ? ` (Carrez: ${lot.lot1_surface_carrez} m²)` : '';
+
+    // Only show Carrez if it's an Appartement and carrez value exists
+    const showCarrez = lot.type_local === 'Appartement' && lot.lot1_surface_carrez;
+    const carrez = showCarrez ? ` (Carrez: ${lot.lot1_surface_carrez} m²)` : '';
+
     const pieces = lot.nombre_pieces_principales ?? '?';
     return `
       <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
@@ -236,3 +240,4 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
+
