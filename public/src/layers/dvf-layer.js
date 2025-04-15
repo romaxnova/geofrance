@@ -212,11 +212,12 @@ function renderPropertyPanel(data) {
   const lotRows = filteredLots.map(lot => {
     const type = lot.type_local || 'Bien';
     const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+    const carrez = lot.lot1_surface_carrez ? ` (Carrez: ${lot.lot1_surface_carrez} m²)` : '';
     const pieces = lot.nombre_pieces_principales ?? '?';
     return `
       <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
         <div><strong>${type}</strong></div>
-        <div>📐 ${surface}</div>
+        <div>📐 ${surface}${carrez}</div>
         <div>🛏️ ${pieces === '?' ? '-' : pieces} ${pieces === '?' ? '' : 'pièce' + (pieces > 1 ? 's' : '')}</div>
       </div>
     `;
@@ -235,7 +236,3 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
-
-
-
-
