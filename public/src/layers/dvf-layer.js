@@ -194,8 +194,6 @@ export function renderGroupedPanel(address, grouped) {
     return '<p>Aucune mutation disponible à cette adresse.</p>';
   }
 
-  console.log('📦 renderGroupedPanel — entries:', grouped);
-
   const groupedByMutation = {};
   grouped.forEach(entry => {
     if (!groupedByMutation[entry.id_mutation]) {
@@ -214,24 +212,22 @@ export function renderGroupedPanel(address, grouped) {
         currency: 'EUR'
       }).format(mutation.valeur_fonciere);
 
+      // Flatten all lots across entries
       const allLots = entries.flatMap(e => e.lots || []);
 
-      // Deduplicate based on surface/type/rooms
+      // Deduplicate based on type/surface/rooms
       const seen = new Set();
       const filteredLots = allLots.filter(lot => {
-        const key = `${lot.type_local}|${lot.Surface}|${lot.nombre_pieces_principales}`;
+        const key = `${lot.type_local}|${lot.Surface}|${lot.nombre_pieces_principales}|${lot.Carrez}`;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
       });
 
-      const lotRows = filteredLots.map(lot => {
+      const lotRows = filteredLots.map((lot, idx) => {
         const type = lot.type_local ?? 'Type inconnu';
         const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
-
-        const showCarrez = lot.type_local === 'Appartement' && lot.Carrez;
-        const carrez = showCarrez ? ` (Carrez: ${lot.Carrez} m²)` : '';
-
+        const carrez = lot.Carrez ? ` (Carrez: ${lot.Carrez} m²)` : '';
         const pieces = lot.nombre_pieces_principales ?? '?';
 
         return `
@@ -261,3 +257,4 @@ export function renderGroupedPanel(address, grouped) {
     </div>
   `;
 }
+
