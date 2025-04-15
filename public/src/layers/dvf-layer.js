@@ -191,8 +191,11 @@ function openGroupedPanel(address, salesList) {
 
 function renderPropertyPanel(data) {
   if (!data || !data.lots || data.lots.length === 0) {
+    console.warn('⚠️ No lots found in data:', data);
     return '<p>Aucune donnée disponible à cette adresse.</p>';
   }
+
+  console.log('📦 renderPropertyPanel — received lots:', data.lots);
 
   const date = new Date(data.date_mutation).toLocaleDateString('fr-FR');
   const formattedPrice = new Intl.NumberFormat('fr-FR', {
@@ -210,10 +213,11 @@ function renderPropertyPanel(data) {
   });
 
   const lotRows = filteredLots.map(lot => {
-    const type = lot.type_local || 'Bien';
+    console.log('🔍 Lot info:', lot);
+
+    const type = lot.type_local ?? 'Type inconnu';
     const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
 
-    // Only show Carrez if it's an Appartement and carrez value exists
     const showCarrez = lot.type_local === 'Appartement' && lot.lot1_surface_carrez;
     const carrez = showCarrez ? ` (Carrez: ${lot.lot1_surface_carrez} m²)` : '';
 
@@ -240,4 +244,3 @@ function renderPropertyPanel(data) {
     </div>
   `;
 }
-
