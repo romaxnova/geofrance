@@ -193,6 +193,7 @@ function openGroupedPanel(address, salesList) {
   if (window.lucide) window.lucide.createIcons?.();
 }
 
+
 export function renderGroupedPanel(address, grouped) {
   if (!grouped || grouped.length === 0) {
     return '<p>Aucune mutation disponible à cette adresse.</p>';
@@ -216,52 +217,37 @@ export function renderGroupedPanel(address, grouped) {
         currency: 'EUR'
       }).format(mutation.valeur_fonciere);
 
-      // Heuristic: pick Carrez value from the Appartement if available, else fallback to first value
-      let fallbackCarrez = null;
-      for (const e of entries) {
-        if (e.type_local === 'Appartement' && e.lot1_surface_carrez) {
-          fallbackCarrez = e.lot1_surface_carrez;
-          break;
-        }
-      }
-      if (!fallbackCarrez) {
-        for (const e of entries) {
-          if (e.lot1_surface_carrez) {
-            fallbackCarrez = e.lot1_surface_carrez;
-            break;
-          }
-        }
-      }
+      // Flatten all lots across entries
+      const allLots = entries.flatMap(e => e.lots || []);
 
+      // Deduplicate based on type/surface/rooms
       const seen = new Set();
-      const lots = entries
-        .filter(entry => {
-          const key = `${entry.type_local}|${entry.surface_reelle_bati}|${entry.nombre_pieces_principales}`;
-          if (seen.has(key)) return false;
-          seen.add(key);
-          return true;
-        })
-        .map(entry => {
-          const type = entry.type_local ?? 'Type inconnu';
-          const surface = entry.surface_reelle_bati ? `${entry.surface_reelle_bati} m²` : 'n/a';
-          const pieces = entry.nombre_pieces_principales ?? '?';
+      const filteredLots = allLots.filter(lot => {
+        const key = `${lot.type_local}|${lot.Surface}|${lot.nombre_pieces_principales}|${lot.Carrez}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
 
-          const rawCarrez = entry.lot1_surface_carrez || fallbackCarrez;
-          const carrezText = rawCarrez ? `\n(Carrez: ${rawCarrez} m²)` : '';
+      const lotRows = filteredLots.map((lot, idx) => {
+        const type = lot.type_local ?? 'Type inconnu';
+        const surface = lot.Surface ? `${lot.Surface} m²` : 'n/a';
+        const carrez = lot.Carrez ? ` (Carrez: ${lot.Carrez} m²)` : '';
+        const pieces = lot.nombre_pieces_principales ?? '?';
 
-          return `
-            <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
-              <div><strong>${type}</strong></div>
-              <div>📐 ${surface}${carrezText}</div>
-              <div>🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}</div>
-            </div>
-          `;
-        }).join('');
+        return `
+          <div class="lot-row" style="border-left: 4px solid #ccc; padding-left: 0.8rem; margin-bottom: 0.4rem;">
+            <div><strong>${type}</strong></div>
+            <div>📐 ${surface}${carrez}</div>
+            <div>🛏️ ${pieces === '?' ? '-' : pieces} pièce${pieces > 1 ? 's' : ''}</div>
+          </div>
+        `;
+      }).join('');
 
       return `
         <div class="mutation-block">
           <h3 style="color:#0d46a8">${date} — ${formattedPrice}</h3>
-          ${lots}
+          ${lotRows}
         </div>
       `;
     }).join('');
@@ -276,3 +262,4 @@ export function renderGroupedPanel(address, grouped) {
     </div>
   `;
 }
+
